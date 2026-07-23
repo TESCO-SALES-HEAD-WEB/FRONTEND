@@ -129,5 +129,29 @@ export const mockApprovals = [
     chain: [
       { role: 'Head', name: 'Sarah Head', timestamp: '09 Jul 2026', comment: 'Budget exhausted for this quarter. Rejected.' }
     ]
+  },
+  {
+    id: 'REQ-2048',
+    type: 'Design',
+    title: '3D Elevation Design Approval for Lead LD-1003',
+    requester: {
+      name: 'Ramesh Patel',
+      role: 'Design Coordinator',
+      team: 'West Region',
+      avatar: 'RP'
+    },
+    amount: '₹0',
+    currentValue: 'Draft',
+    requestedValue: 'Finalized',
+    age: '1h ago',
+    isOverdue: false,
+    priority: 'high',
+    status: 'pending',
+    dateRaised: '18 Jul 2026',
+    reason: 'Client has requested urgent approval on the 3D elevation designs before signing the final quotation.',
+    impact: { margin: 'N/A', warning: 'High Priority Client' },
+    chain: [
+      { role: 'Designer', name: 'Ramesh Patel', timestamp: '18 Jul 2026, 09:15 AM', comment: 'Uploaded final 3D renders for review.' }
+    ]
   }
 ];

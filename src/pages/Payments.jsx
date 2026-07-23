@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import DateRangePicker from '../components/DateRangePicker';
 import RecordPaymentModal from '../components/RecordPaymentModal';
+import EditInvoiceModal from '../components/EditInvoiceModal';
 import './Payments.css';
 
 const mockPayments = [
@@ -69,6 +70,37 @@ const mockPayments = [
 export default function Payments() {
   const [viewMode, setViewMode] = React.useState('manager');
   const [isRecordPaymentModalOpen, setIsRecordPaymentModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [selectedPayment, setSelectedPayment] = React.useState(null);
+  const [paymentsData, setPaymentsData] = React.useState(mockPayments);
+
+  const handlePayClick = (payment) => {
+    setSelectedPayment(payment);
+    setIsRecordPaymentModalOpen(true);
+  };
+
+  const handleEditClick = (payment) => {
+    setSelectedPayment(payment);
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenNewPayment = () => {
+    setSelectedPayment(null);
+    setIsRecordPaymentModalOpen(true);
+  };
+
+  const formatDateForInput = (dateStr) => {
+    if (!dateStr) return '';
+    const [d, m, y] = dateStr.split('/');
+    return `${y}-${m}-${d}`;
+  };
+
+  const handleDateChange = (id, newDateStr) => {
+    if (!newDateStr) return;
+    const [y, m, d] = newDateStr.split('-');
+    const formatted = `${d}/${m}/${y}`;
+    setPaymentsData(prev => prev.map(p => p.id === id ? { ...p, dueDate: formatted } : p));
+  };
 
   return (
     <div className="payments-page">
@@ -97,7 +129,7 @@ export default function Payments() {
         <button 
           className="btn btn--primary btn-icon" 
           style={{ background: '#1e1b4b', borderColor: '#1e1b4b' }}
-          onClick={() => setIsRecordPaymentModalOpen(true)}
+          onClick={handleOpenNewPayment}
         >
           <Plus size={18} />
           Record Payment
@@ -173,53 +205,64 @@ export default function Payments() {
               <option value="" disabled>Filter by Status</option>
               <option value="collected">Collected</option>
               <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
             </select>
-            <ChevronDown size={14} className="select-icon" />
+            <ChevronDown size={14} className="text-muted select-icon" style={{ right: '10px' }} />
           </div>
-          <button className="btn btn--outline" style={{ height: '36px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
-            <CalendarDays size={14} />
-            Date Range
-          </button>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
           <table className="payments-table">
             <thead>
               <tr>
-                <th style={{ width: '8%' }}>LEAD ID</th>
-                <th style={{ width: '10%' }}>CUSTOMER</th>
-                <th style={{ width: '10%' }}>ORDER VALUE</th>
-                <th style={{ width: '12%' }}>AMOUNT COLLECTED</th>
+                <th style={{ width: '12%' }}>ORDER VALUE</th>
+                <th style={{ width: '14%' }}>AMOUNT COLLECTED</th>
                 <th style={{ width: '12%' }}>UPCOMING DUES</th>
                 <th style={{ width: '12%' }}>PENDING PAYMENTS</th>
                 <th style={{ width: '12%' }}>OVERDUE PAYMENTS</th>
-                <th style={{ width: '12%' }}>DUE DATE</th>
-                <th style={{ width: '10%' }}>METHOD</th>
-                <th style={{ width: '10%' }}>ACTIONS</th>
+                <th style={{ width: '14%' }}>DUE DATE</th>
+                <th style={{ width: '12%' }}>METHOD</th>
+                <th style={{ width: '12%' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
-              {mockPayments.map((payment, i) => (
-                <tr key={i}>
-                  <td className="fw-600 text-file-id-blue">{payment.id}</td>
-                  <td className="fw-700 text-primary">{payment.customer}</td>
+              {paymentsData.map((payment, i) => (
+                <tr key={payment.id || i}>
                   <td className="fw-700 text-primary">{payment.orderValue}</td>
-                  <td className={payment.amountCollect !== '₹0' ? 'text-green' : 'text-primary'}>{payment.amountCollect}</td>
+                  <td className={payment.amountCollect !== '₹0' ? 'text-primary fw-700' : 'text-primary'}>{payment.amountCollect}</td>
                   <td>{payment.upcoming}</td>
                   <td>{payment.pending}</td>
                   <td>{payment.overdue}</td>
                   <td>
-                    <div className="input-with-icon" style={{ display: 'inline-flex', width: '110px' }}>
-                      <input type="text" readOnly value={payment.dueDate} className="form-input" style={{ height: '28px', fontSize: '0.75rem', padding: '0 0.5rem', color: payment.isOverdue ? '#ef4444' : 'inherit', fontWeight: payment.isOverdue ? '600' : 'normal', background: 'transparent' }} />
-                      <CalendarDays size={12} className="input-icon-right" />
-                    </div>
+                    <label className="custom-date-picker">
+                      <span className={payment.isOverdue ? 'text-red' : ''}>{payment.dueDate}</span>
+                      <CalendarDays size={16} className="calendar-icon" />
+                      <input 
+                        type="date" 
+                        className="hidden-date-input" 
+                        value={formatDateForInput(payment.dueDate)}
+                        onChange={(e) => handleDateChange(payment.id, e.target.value)}
+                      />
+                    </label>
                   </td>
                   <td>{payment.method}</td>
                   <td>
                     <div className="action-buttons-group">
                       <button className="action-btn-sm" title="View"><Eye size={14} /></button>
-                      <button className="action-btn-sm" title="Edit"><Edit2 size={14} /></button>
-                      <button className="action-btn-sm" title="Pay"><CreditCard size={14} /></button>
+                      <button 
+                        className={`action-btn-sm ${selectedPayment?.id === payment.id && isEditModalOpen ? 'active' : ''}`} 
+                        title="Edit"
+                        onClick={() => handleEditClick(payment)}
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button 
+                        className={`action-btn-sm ${selectedPayment?.id === payment.id && isRecordPaymentModalOpen ? 'active' : ''}`} 
+                        title="Pay"
+                        onClick={() => handlePayClick(payment)}
+                      >
+                        <CreditCard size={14} />
+                      </button>
                       <button className="action-btn-sm" title="Download"><Download size={14} /></button>
                     </div>
                   </td>
@@ -244,7 +287,19 @@ export default function Payments() {
 
       <RecordPaymentModal 
         isOpen={isRecordPaymentModalOpen}
-        onClose={() => setIsRecordPaymentModalOpen(false)}
+        onClose={() => {
+          setIsRecordPaymentModalOpen(false);
+          setSelectedPayment(null);
+        }}
+        payment={selectedPayment}
+      />
+      <EditInvoiceModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedPayment(null);
+        }}
+        payment={selectedPayment}
       />
     </div>
   );

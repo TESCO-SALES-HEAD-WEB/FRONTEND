@@ -32,7 +32,6 @@ const navItems = [
   { icon: CreditCard, label: 'Payment Collection', path: '/payments' },
   { icon: CheckSquare, label: 'Approvals', path: '/approvals', badge: 7 },
   { icon: Network, label: 'Tesco ERM', path: '/tesco-erm' },
-  { icon: Users, label: 'User Management', path: '/users' },
   { icon: Settings, label: 'Settings', path: '/settings' }
 ];
 

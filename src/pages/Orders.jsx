@@ -182,7 +182,11 @@ export default function Orders() {
                   <td className="text-muted">{order.salesperson}</td>
                   <td className="fw-700 text-success-bright">{order.value}</td>
                   <td>
-                    <button className="btn-circle-edit" title="Edit">
+                    <button 
+                      className="btn-circle-edit" 
+                      title="Edit"
+                      onClick={() => navigate(`/orders/edit/${order.id}`)}
+                    >
                       <Edit2 size={14} />
                     </button>
                   </td>
@@ -213,7 +217,11 @@ export default function Orders() {
                   <td className="text-muted">{order.salesperson}</td>
                   <td className="fw-700 text-success-bright">{order.value}</td>
                   <td>
-                    <button className="btn-circle-edit" title="Edit">
+                    <button 
+                      className="btn-circle-edit" 
+                      title="Edit"
+                      onClick={() => navigate(`/orders/edit/${order.id}`)}
+                    >
                       <Edit2 size={14} />
                     </button>
                   </td>

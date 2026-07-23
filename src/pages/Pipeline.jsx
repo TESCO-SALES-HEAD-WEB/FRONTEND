@@ -37,11 +37,42 @@ export default function Pipeline() {
   const [viewMode, setViewMode] = useState('manager');
   const [pipelineData, setPipelineData] = useState(initialPipeline);
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  
+  const [filterStage, setFilterStage] = useState('all');
+  const [filterService, setFilterService] = useState('all');
+  const [filterExecutive, setFilterExecutive] = useState('all');
 
   const updateStage = (id, newStage) => {
     setPipelineData(pipelineData.map(deal => deal.id === id ? { ...deal, stage: newStage } : deal));
     setOpenDropdownId(null);
   };
+
+  const formatDateForInput = (dateStr) => {
+    if (!dateStr) return '';
+    const [d, m, y] = dateStr.split('/');
+    if (!d || !m || !y) return '';
+    return `${y}-${m}-${d}`;
+  };
+
+  const handleDateChange = (id, newDateStr) => {
+    if (!newDateStr) return;
+    const [y, m, d] = newDateStr.split('-');
+    const formatted = `${d}/${m}/${y}`;
+    setPipelineData(pipelineData.map(deal => deal.id === id ? { ...deal, followUp: formatted } : deal));
+  };
+
+  const filteredPipeline = pipelineData.filter(deal => {
+    if (filterStage !== 'all' && deal.stage !== filterStage) return false;
+    if (filterService !== 'all' && deal.service !== filterService) return false;
+    if (viewMode === 'coordinator' && filterExecutive !== 'all' && deal.assignedTo !== filterExecutive) return false;
+    return true;
+  });
+
+  // Extract unique options for filters
+  const uniqueStages = [...new Set(pipelineData.map(d => d.stage))];
+  const uniqueServices = [...new Set(pipelineData.map(d => d.service))];
+  const uniqueExecutives = [...new Set(pipelineData.map(d => d.assignedTo))];
+
   return (
     <div className="pipeline-page">
       <div className="dashboard-header-bar">
@@ -111,29 +142,55 @@ export default function Pipeline() {
           
           <div className="filter-group">
             <div className="custom-select-wrapper">
-              <select className="btn btn--secondary filter-dropdown filter-select">
+              <select 
+                className="btn btn--secondary filter-dropdown filter-select"
+                value={filterStage}
+                onChange={(e) => setFilterStage(e.target.value)}
+              >
                 <option value="all">Filter by Stage</option>
+                {uniqueStages.map(stage => (
+                  <option key={stage} value={stage}>{stage}</option>
+                ))}
               </select>
               <ChevronDown size={14} className="text-muted select-icon" />
             </div>
             
             {viewMode === 'coordinator' && (
               <div className="custom-select-wrapper">
-                <select className="btn btn--secondary filter-dropdown filter-select">
+                <select 
+                  className="btn btn--secondary filter-dropdown filter-select"
+                  value={filterExecutive}
+                  onChange={(e) => setFilterExecutive(e.target.value)}
+                >
                   <option value="all">Filter by Sales Executive</option>
+                  {uniqueExecutives.map(exec => (
+                    <option key={exec} value={exec}>{exec}</option>
+                  ))}
                 </select>
                 <ChevronDown size={14} className="text-muted select-icon" />
               </div>
             )}
             
             <div className="custom-select-wrapper">
-              <select className="btn btn--secondary filter-dropdown filter-select">
+              <select 
+                className="btn btn--secondary filter-dropdown filter-select"
+                value={filterService}
+                onChange={(e) => setFilterService(e.target.value)}
+              >
                 <option value="all">Filter by Service</option>
+                {uniqueServices.map(service => (
+                  <option key={service} value={service}>{service}</option>
+                ))}
               </select>
               <ChevronDown size={14} className="text-muted select-icon" />
             </div>
             
-            <button className="btn-text">Reset Filters</button>
+            <button 
+              className="btn-text" 
+              onClick={() => { setFilterStage('all'); setFilterService('all'); setFilterExecutive('all'); }}
+            >
+              Reset Filters
+            </button>
           </div>
         </div>
 
@@ -155,7 +212,7 @@ export default function Pipeline() {
             </tr>
           </thead>
           <tbody>
-            {pipelineData.map((deal) => (
+            {filteredPipeline.map((deal) => (
               <tr key={deal.id}>
                 <td className="fw-600 font-medium text-primary">{deal.id}</td>
                 <td className="fw-700">{deal.customer}</td>
@@ -188,20 +245,21 @@ export default function Pipeline() {
                 <td className="fw-700 text-success-bright">{deal.projectValue}</td>
                 <td className="text-muted">{deal.lastActivity}</td>
                 <td>
-                  <div className="date-input-wrapper">
+                  <label className="custom-date-picker">
+                    <span className={!deal.followUp ? 'placeholder-text' : ''}>
+                      {deal.followUp || 'dd/mm/yyyy'}
+                    </span>
+                    <CalendarDays size={16} className="calendar-icon" />
                     <input 
-                      type="text" 
-                      className="follow-up-input" 
-                      placeholder="dd/mm/yyyy" 
-                      defaultValue={deal.followUp}
+                      type="date" 
+                      className="hidden-date-input" 
+                      value={formatDateForInput(deal.followUp)}
+                      onChange={(e) => handleDateChange(deal.id, e.target.value)}
                     />
-                    <CalendarDays size={14} className="calendar-icon" />
-                  </div>
+                  </label>
                 </td>
                 <td>
                   <div className="action-buttons">
-                    <button className="action-btn view-btn"><Eye size={14} /></button>
-                    <button className="action-btn edit-btn"><Edit2 size={14} /></button>
                     <button className="action-btn delete-btn"><Trash2 size={14} /></button>
                   </div>
                 </td>

@@ -8,11 +8,13 @@ import {
   ChevronLeft,
   Plus
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import './NewHandoverForm.css';
 
 export default function NewHandoverForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
   
   const [milestones, setMilestones] = useState([
     { term: '', percentage: '', value: '' }
@@ -35,13 +37,15 @@ export default function NewHandoverForm() {
           </button>
           <div className="handover-title-wrapper">
             <div className="breadcrumbs">Pages / Projects / Projects</div>
-            <h1>New Project File</h1>
-            <div className="header-subtitle">Sales to Project Handover Form</div>
+            <h1>{isEditMode ? `Edit Project File (${id})` : 'New Project File'}</h1>
+            <div className="header-subtitle">{isEditMode ? 'Edit Sales to Project Handover Form' : 'Sales to Project Handover Form'}</div>
           </div>
         </div>
         <div className="handover-header-right">
           <button className="btn btn--secondary" onClick={handleBack}>Cancel</button>
-          <button className="btn btn--primary" style={{ background: '#1e1b4b', borderColor: '#1e1b4b' }}>Submit Handover</button>
+          <button className="btn btn--primary" style={{ background: '#1e1b4b', borderColor: '#1e1b4b' }}>
+            {isEditMode ? 'Save Changes' : 'Submit Handover'}
+          </button>
         </div>
       </div>
 
@@ -54,11 +58,21 @@ export default function NewHandoverForm() {
         <div className="grid-3-col">
           <div className="form-group">
             <label className="form-label">Client Name *</label>
-            <input type="text" className="form-input" placeholder="e.g. Sree Hrindzavan Kindergarten" />
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="e.g. Sree Hrindzavan Kindergarten" 
+              defaultValue={isEditMode ? 'Arjun Mehta' : ''} 
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Project Location *</label>
-            <input type="text" className="form-input" placeholder="e.g. Chitlapakkam" />
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="e.g. Chitlapakkam" 
+              defaultValue={isEditMode ? 'New Delhi' : ''}
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Contact Details (Phone/Email)</label>
@@ -97,7 +111,12 @@ export default function NewHandoverForm() {
           </div>
           <div className="form-group">
             <label className="form-label">Salesperson Name *</label>
-            <input type="text" className="form-input" placeholder="e.g. Suseen Khan" />
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="e.g. Suseen Khan" 
+              defaultValue={isEditMode ? 'Mike Johnson' : ''}
+            />
           </div>
 
           <div className="form-group">
@@ -123,7 +142,12 @@ export default function NewHandoverForm() {
         <div className="grid-2-col">
           <div className="form-group">
             <label className="form-label">Type of Project *</label>
-            <input type="text" className="form-input" placeholder="e.g. PU Sheet Roof with wall panel cladding" />
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="e.g. PU Sheet Roof with wall panel cladding" 
+              defaultValue={isEditMode ? 'Residential Roofing' : ''}
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Project Size/Area *</label>
@@ -213,7 +237,13 @@ export default function NewHandoverForm() {
           <label className="form-label">Quoted Price *</label>
           <div className="input-with-icon">
             <span className="input-icon-left" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>₹</span>
-            <input type="text" className="form-input" placeholder="Amount" style={{ paddingLeft: '1.75rem' }} />
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="Amount" 
+              style={{ paddingLeft: '1.75rem' }} 
+              defaultValue={isEditMode ? '12,00,000' : ''}
+            />
           </div>
         </div>
 
@@ -293,7 +323,7 @@ export default function NewHandoverForm() {
       <div className="footer-actions">
         <button className="btn btn--primary" style={{ background: '#1e1b4b', borderColor: '#1e1b4b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <FileSignature size={18} />
-          Generate Handover Form
+          {isEditMode ? 'Update Handover Form' : 'Generate Handover Form'}
         </button>
       </div>
 

@@ -55,6 +55,7 @@ export default function Approvals() {
       case 'Discount': return 'var(--danger)';
       case 'Target change': return 'var(--warning)';
       case 'Quotation': return 'var(--primary)';
+      case 'Design': return '#8b5cf6'; // Purple for design
       default: return 'var(--info)';
     }
   };
@@ -108,13 +109,6 @@ export default function Approvals() {
       </div>
 
       <div className="table-container">
-        <div className="filter-bar">
-          <div className="filter-item">Type <Filter size={14}/></div>
-          <div className="filter-item">Requester <Filter size={14}/></div>
-          <div className="filter-item">Amount range <Filter size={14}/></div>
-          <div className="filter-item">Date <Filter size={14}/></div>
-          <div className="filter-item">Priority <Filter size={14}/></div>
-        </div>
         <table className="data-table">
           <thead>
             <tr>

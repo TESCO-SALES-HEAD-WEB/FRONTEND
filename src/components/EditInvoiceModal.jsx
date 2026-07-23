@@ -1,8 +1,8 @@
 import React from 'react';
-import { X, CreditCard, IndianRupee, CalendarDays, ChevronDown } from 'lucide-react';
-import './RecordPaymentModal.css';
+import { X, FileEdit, User, IndianRupee, CalendarDays, ChevronDown } from 'lucide-react';
+import './RecordPaymentModal.css'; // Reusing the same CSS for consistent modal styling
 
-export default function RecordPaymentModal({ isOpen, onClose, payment }) {
+export default function EditInvoiceModal({ isOpen, onClose, payment }) {
   if (!isOpen) return null;
 
   const [paymentMethod, setPaymentMethod] = React.useState(payment?.method && payment.method !== '-' ? payment.method : "Bank Transfer");
@@ -12,12 +12,12 @@ export default function RecordPaymentModal({ isOpen, onClose, payment }) {
       <div className="record-payment-content" onClick={(e) => e.stopPropagation()}>
         <div className="record-payment-header">
           <div className="record-payment-title-box">
-            <div className="record-payment-icon">
-              <CreditCard size={20} />
+            <div className="record-payment-icon" style={{ background: '#eff6ff', color: '#3b82f6' }}>
+              <FileEdit size={20} />
             </div>
             <div>
-              <h2>{payment ? 'Edit Payment' : 'Record Payment'}</h2>
-              <p>{payment ? `Update payment receipt for ${payment.id}` : 'Log a new payment receipt.'}</p>
+              <h2>Edit Invoice</h2>
+              <p>Update invoice details for {payment?.id}</p>
             </div>
           </div>
           <button className="close-btn" onClick={onClose}>
@@ -28,19 +28,48 @@ export default function RecordPaymentModal({ isOpen, onClose, payment }) {
         <div className="record-payment-body">
           <div className="form-card">
             <h3 className="form-card-title">
-              <IndianRupee size={18} />
-              Transaction Details
+              <User size={18} />
+              Invoice Details
             </h3>
             
             <div className="form-grid-2-col">
+              <div className="form-group form-group-2-span">
+                <label className="form-label-caps">CUSTOMER NAME</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  defaultValue={payment?.customer || ''} 
+                />
+              </div>
+
               <div className="form-group">
-                <label className="form-label-caps">AMOUNT COLLECT</label>
+                <label className="form-label-caps">ORDER VALUE</label>
                 <div className="input-with-icon">
                   <span className="input-icon-left" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>₹</span>
                   <input 
                     type="text" 
                     className="form-input" 
-                    placeholder="0.00" 
+                    defaultValue={payment ? payment.orderValue.replace('₹', '').replace(/,/g, '') : ''}
+                    style={{ paddingLeft: '1.75rem' }} 
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-caps">DUE DATE</label>
+                <div className="input-with-icon">
+                  <CalendarDays size={14} className="input-icon-left" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input type="text" className="form-input" defaultValue={payment?.dueDate || ""} style={{ paddingLeft: '2rem' }} />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-caps">AMOUNT COLLECTED</label>
+                <div className="input-with-icon">
+                  <span className="input-icon-left" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>₹</span>
+                  <input 
+                    type="text" 
+                    className="form-input" 
                     defaultValue={payment ? payment.amountCollect.replace('₹', '').replace(/,/g, '') : ''}
                     style={{ paddingLeft: '1.75rem' }} 
                   />
@@ -64,20 +93,6 @@ export default function RecordPaymentModal({ isOpen, onClose, payment }) {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label-caps">TRANSACTION ID / CHEQUE NO.</label>
-                <input type="text" className="form-input" placeholder="e.g. TXN987654321" />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label-caps">PAYMENT DATE</label>
-                <div className="input-with-icon">
-                  <CalendarDays size={14} className="input-icon-left" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input type="text" className="form-input" defaultValue={payment?.dueDate || "23/07/2026"} style={{ paddingLeft: '2rem' }} />
-                  <CalendarDays size={14} className="input-icon-right" />
-                </div>
-              </div>
-
               {paymentMethod === 'Cash' && (
                 <div className="form-group">
                   <label className="form-label-caps">WHOM</label>
@@ -94,19 +109,11 @@ export default function RecordPaymentModal({ isOpen, onClose, payment }) {
               )}
             </div>
           </div>
-
-          <div className="form-card">
-            <label className="form-label-caps">PAYMENT NOTES & REMARKS</label>
-            <textarea 
-              className="form-input textarea-input" 
-              placeholder="Add any details about this payment..."
-            ></textarea>
-          </div>
         </div>
 
         <div className="record-payment-footer">
           <button className="btn btn--secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-save-green">Save Record</button>
+          <button className="btn btn--primary" style={{ background: '#3b82f6', borderColor: '#3b82f6', color: 'white' }}>Save Changes</button>
         </div>
       </div>
     </div>
