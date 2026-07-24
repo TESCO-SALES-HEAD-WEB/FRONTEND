@@ -263,7 +263,6 @@ export default function Payments() {
                       >
                         <CreditCard size={14} />
                       </button>
-                      <button className="action-btn-sm" title="Download"><Download size={14} /></button>
                     </div>
                   </td>
                 </tr>

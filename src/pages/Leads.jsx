@@ -8,6 +8,7 @@ import DateRangePicker from '../components/DateRangePicker';
 import AddLeadModal from '../components/AddLeadModal';
 import LeadDetailsDrawer from '../components/LeadDetailsDrawer';
 import StatusUpdateModal from '../components/StatusUpdateModal';
+import GenerateQuotationModal from '../components/GenerateQuotationModal';
 import './Leads.css';
 
 const mockLeads = [
@@ -80,6 +81,8 @@ export default function Leads() {
   const [drawerTab, setDrawerTab] = useState('specifications');
   const [leadsData, setLeadsData] = useState(mockLeads);
   const [pendingStatusChange, setPendingStatusChange] = useState(null);
+  const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
+  const [selectedQuotationLead, setSelectedQuotationLead] = useState(null);
 
   const getStatusColor = (status) => {
     switch (status.toUpperCase()) {
@@ -422,7 +425,11 @@ export default function Leads() {
                     </button>
                     <button 
                       className="action-btn btn-download"
-                      onClick={() => alert(`Downloading report for ${lead.name}...`)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedQuotationLead(lead);
+                        setIsQuotationModalOpen(true);
+                      }}
                     >
                       <Download size={14} />
                     </button>
@@ -472,6 +479,12 @@ export default function Leads() {
         onSave={handleSaveStatus}
         newStatus={pendingStatusChange?.newStatus}
         statusColor={pendingStatusChange ? getStatusColor(pendingStatusChange.newStatus) : ''}
+      />
+
+      <GenerateQuotationModal 
+        isOpen={isQuotationModalOpen} 
+        onClose={() => setIsQuotationModalOpen(false)} 
+        lead={selectedQuotationLead} 
       />
     </div>
   );

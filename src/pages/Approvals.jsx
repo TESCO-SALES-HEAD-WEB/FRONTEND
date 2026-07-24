@@ -96,12 +96,6 @@ export default function Approvals() {
             <Search size={16} className="text-muted" />
             <input type="text" placeholder="Search requests..." />
           </div>
-          <button 
-            className="btn btn--secondary" 
-            disabled={selectedIds.length === 0}
-          >
-            Bulk approve
-          </button>
           <button className="btn btn--icon">
             <Download size={18} />
           </button>
