@@ -1,0 +1,240 @@
+.date-picker-container {
+  position: relative;
+}
+
+.date-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.date-trigger.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.date-trigger .font-medium {
+  font-weight: 600;
+}
+
+.date-picker-popover {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  background: var(--surface);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  z-index: 100;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  width: max-content;
+}
+
+.dp-sidebar {
+  width: 160px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  padding: 0.5rem 0;
+}
+
+.dp-preset-btn {
+  padding: 0.625rem 1rem;
+  margin: 0.125rem 0.5rem;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.dp-preset-btn:hover {
+  background: var(--background);
+}
+
+.dp-preset-btn.active {
+  background: #f0f4ff;
+  color: var(--primary);
+  font-weight: 600;
+  border: 1px solid var(--primary);
+}
+
+.dp-calendar {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.5rem;
+}
+
+.dp-nav-btn {
+  background: #f8fafc;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.dp-nav-btn:hover {
+  background: var(--border);
+}
+
+.dp-month-year {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+}
+
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 36px);
+  gap: 4px;
+  text-align: center;
+}
+
+.dp-weekdays {
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  margin-bottom: 0.5rem;
+}
+
+.dp-day {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.dp-day:not(.empty):not(.in-range):not(.start-date):not(.end-date):hover {
+  background: var(--background);
+}
+
+.dp-day.in-range {
+  background: #f0f4ff;
+  color: var(--text-primary);
+  border-radius: 0;
+}
+
+/* Ensure the left/right edges of the range have rounded corners if they don't have start/end dates */
+.dp-day.start-date {
+  background: white;
+  border: 2px solid var(--text-primary);
+  font-weight: 700;
+  border-radius: 6px;
+  position: relative;
+  z-index: 2;
+}
+
+.dp-day.end-date {
+  background: var(--text-primary);
+  color: white;
+  font-weight: 700;
+  border-radius: 6px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Connect the range perfectly behind the start/end circles */
+.dp-day.start-date::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -2px;
+  bottom: 0;
+  width: 50%;
+  background: #f0f4ff;
+  z-index: -1;
+  border-radius: 0;
+}
+
+.dp-day.end-date::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -2px;
+  bottom: 0;
+  width: 50%;
+  background: #f0f4ff;
+  z-index: -1;
+  border-radius: 0;
+}
+
+.dp-day.single-day::after {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .date-picker-popover {
+    flex-direction: column;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 360px;
+    z-index: 1000;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Add an overlay backdrop for mobile */
+  .date-picker-popover::before {
+    content: '';
+    position: fixed;
+    top: -50vh;
+    left: -50vw;
+    width: 200vw;
+    height: 200vh;
+    background: rgba(0,0,0,0.4);
+    z-index: -1;
+  }
+
+  .dp-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0.5rem;
+  }
+  
+  .dp-preset-btn {
+    flex: 1 1 calc(33% - 1rem);
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .dp-calendar {
+    padding: 1rem;
+    align-items: center;
+  }
+}
