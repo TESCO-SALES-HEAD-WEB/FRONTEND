@@ -9,12 +9,12 @@ import { authApi, setSession, clearSession, getUser } from '../api/client';
 // shown as a fixed default. Amber accent. Auth/OTP/validation unchanged.
 // ─────────────────────────────────────────────────────────────────────────────
 const APP_ROLE = 'Sales Head';
-const ACCENT = '#B45309';        // amber-700
-const ACCENT_DARK = '#92400E';   // amber-800
-const ACCENT_SHADOW = 'rgba(180,83,9,0.25)';
-const HERO_FROM = '#FFFBEB';
-const HERO_TO = '#FEF3C7';
-const HERO_BORDER = 'rgba(253,230,138,0.5)';
+const ACCENT = '#4F46E5';        // indigo-600
+const ACCENT_DARK = '#4338CA';   // indigo-700
+const ACCENT_SHADOW = 'rgba(79,70,229,0.25)';
+const HERO_FROM = '#EFF6FF';
+const HERO_TO = '#DBEAFE';
+const HERO_BORDER = 'rgba(191,219,254,0.4)';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -173,7 +173,7 @@ export default function Login() {
       <div className="login-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1.5rem', maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
         <div className="login-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem', width: '100%', alignItems: 'center' }}>
 
-          <div className="left-hero-card" style={{ background: `linear-gradient(135deg, ${HERO_FROM} 0%, ${HERO_TO} 100%)`, border: `1px solid ${HERO_BORDER}`, borderRadius: '1.5rem', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', boxShadow: '0 4px 20px -2px rgba(180,83,9,0.18)' }}>
+          <div className="left-hero-card" style={{ background: `linear-gradient(135deg, ${HERO_FROM} 0%, ${HERO_TO} 100%)`, border: `1px solid ${HERO_BORDER}`, borderRadius: '1.5rem', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', boxShadow: '0 4px 20px -2px rgba(191,219,254,0.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
@@ -188,7 +188,7 @@ export default function Login() {
               <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6, margin: 0 }}>Oversee approvals, teams, pipeline, and performance across your entire organization from one control center.</p>
             </div>
 
-            <div className="hero-image-container" style={{ position: 'relative', borderRadius: '1rem', overflow: 'hidden', boxShadow: '0 10px 30px -5px rgba(120,53,15,0.2)', border: '1px solid rgba(255,255,255,0.8)', aspectRatio: '1.45', backgroundColor: '#78350F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="hero-image-container" style={{ position: 'relative', borderRadius: '1rem', overflow: 'hidden', boxShadow: '0 10px 30px -5px rgba(30,27,75,0.15)', border: '1px solid rgba(255,255,255,0.8)', aspectRatio: '1.45', backgroundColor: '#1E1B4B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ position: 'absolute', color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', fontWeight: 600 }}>Nexus CRM</span>
               <img src="/login_dashboard_preview.png" alt="Dashboard Preview" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', position: 'relative' }} />
             </div>
