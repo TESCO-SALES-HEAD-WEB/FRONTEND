@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
+  Building2,
   CheckSquare,
   Users,
   Network,
@@ -79,9 +80,9 @@ export default function Sidebar({ isCollapsed, toggleCollapse }) {
   }, []);
 
   const handleLogout = () => {
+    // Log out to this app's OWN Sales Head login.
     clearSession();
-    const portal = import.meta.env.VITE_PORTAL_LOGIN_URL || 'http://localhost:5173/login';
-    window.location.href = `${portal}?loggedout=1`;
+    window.location.href = '/login?loggedout=1';
   };
 
   const submitPassword = async (e) => {
@@ -106,7 +107,9 @@ export default function Sidebar({ isCollapsed, toggleCollapse }) {
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar__header">
         <div className="sidebar__logo-container">
-          <div className="sidebar__logo"></div>
+          <div className="sidebar__logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <Building2 size={18} strokeWidth={2.2} />
+          </div>
           {!isCollapsed && <span className="sidebar__role-pill">Sales Head</span>}
         </div>
       </div>

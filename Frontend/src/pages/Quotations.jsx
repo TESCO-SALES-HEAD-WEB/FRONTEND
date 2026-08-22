@@ -259,10 +259,15 @@ export default function Quotations() {
                       )}
                     </td>
                     <td>
-                      {quote.fileData ? (
-                        <a href={quote.fileData} download={quote.fileName || 'quotation.pdf'} className="action-btn" style={{display: 'inline-flex', alignItems: 'center', gap: '0.25rem'}}>
-                          <Download size={14} />
-                          {quote.fileName || 'Download'}
+                      {(quote.fileName || quote.fileData) ? (
+                        <a
+                          href={quote.fileData || undefined}
+                          download={quote.fileData ? (quote.fileName || 'quotation.pdf') : undefined}
+                          title={quote.fileName || 'Quotation'}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', maxWidth: '220px', padding: '0.35rem 0.6rem', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', textDecoration: 'none', color: '#334155', fontSize: '0.8rem', fontWeight: 500, cursor: quote.fileData ? 'pointer' : 'default' }}
+                        >
+                          <Download size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{quote.fileName || 'Quotation.pdf'}</span>
                         </a>
                       ) : (
                         <span className="text-muted">Not uploaded</span>
@@ -340,9 +345,14 @@ export default function Quotations() {
                   </td>
                   <td>
                     {quote.fileData ? (
-                      <a href={quote.fileData} download={quote.fileName || 'quotation.pdf'} className="action-btn" style={{display: 'inline-flex', alignItems: 'center', gap: '0.25rem'}}>
-                        <Download size={16} />
-                        {quote.fileName || 'Download'}
+                      <a
+                        href={quote.fileData || undefined}
+                        download={quote.fileData ? (quote.fileName || 'quotation.pdf') : undefined}
+                        title={quote.fileName || 'Quotation'}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', maxWidth: '220px', padding: '0.35rem 0.6rem', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', textDecoration: 'none', color: '#334155', fontSize: '0.8rem', fontWeight: 500, cursor: quote.fileData ? 'pointer' : 'default' }}
+                      >
+                        <Download size={16} style={{ flexShrink: 0, color: '#6366F1' }} />
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{quote.fileName || 'Quotation.pdf'}</span>
                       </a>
                     ) : (
                       <span className="text-muted">Not uploaded</span>

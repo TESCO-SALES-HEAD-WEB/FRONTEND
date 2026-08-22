@@ -1,12 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, Menu } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { api, clearSession } from '../api/client';
+import { useLocation } from 'react-router-dom';
+import { clearSession, notificationsApi } from '../api/client';
 import './Topbar.css';
-
-const READ_KEY = 'sh_notif_read';
-const loadReadSet = () => { try { return new Set(JSON.parse(localStorage.getItem(READ_KEY) || '[]')); } catch { return new Set(); } };
-const saveReadSet = (set) => localStorage.setItem(READ_KEY, JSON.stringify([...set]));
 
 const timeAgo = (date) => {
   if (!date) return '';
@@ -23,16 +19,15 @@ const timeAgo = (date) => {
 
 export default function Topbar({ toggleSidebar }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
-  const [readSet, setReadSet] = useState(loadReadSet);
+  const [unreadCount, setUnreadCount] = useState(0);
   const panelRef = useRef(null);
 
   const handleSignOut = () => {
+    // Log out of THIS app's own Sales Head login and return to it.
     clearSession();
-    const portal = import.meta.env.VITE_PORTAL_LOGIN_URL || 'http://localhost:5173/login';
-    window.location.href = `${portal}?loggedout=1`;
+    window.location.href = '/login?loggedout=1';
   };
 
   const getBreadcrumbs = () => {
@@ -41,41 +36,23 @@ export default function Topbar({ toggleSidebar }) {
     return paths.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' / ');
   };
 
-  // Build the Sales Head's notifications from the shared CRM database
+  // Pull the real, DB-backed notifications + unread badge count.
+  const load = useCallback(async () => {
+    try {
+      const data = await notificationsApi.getNotifications();
+      setNotifs(Array.isArray(data?.notifications) ? data.notifications : []);
+      setUnreadCount(Number(data?.unreadCount) || 0);
+    } catch {
+      /* leave last-known state on transient errors */
+    }
+  }, []);
+
+  // Fetch on mount and poll every 30s for near-real-time updates.
   useEffect(() => {
-    let active = true;
-    const safe = (p) => p.then((d) => (Array.isArray(d) ? d : [])).catch(() => []);
-    const build = async () => {
-      const [quotes, appts, leads] = await Promise.all([
-        safe(api('/quotations')), safe(api('/appointments')), safe(api('/leads')),
-      ]);
-      if (!active) return;
-      const items = [];
-
-      // Quotations prepared and awaiting the Sales Head's approval
-      quotes.filter(q => String(q.quotationStatus || '').toLowerCase() === 'prepared' && String(q.approvalStatus || '').toLowerCase() !== 'approved' && String(q.approvalStatus || '').toLowerCase() !== 'rejected')
-        .forEach(q => items.push({
-          id: `appr-${q.id}`, text: `Quotation ${q.id} awaiting your approval`, sortDate: q.updatedAt || q.createdAt, to: `/approvals/${q.id}`,
-        }));
-
-      // Appointments rescheduled by a manager/coordinator
-      appts.filter(a => a.rescheduledAt).forEach(a => items.push({
-        id: `resched-${a._id || a.id}-${a.rescheduledAt}`,
-        text: `Rescheduled by ${a.rescheduledBy || 'a manager'}: ${a.title || 'Appointment'} → ${a.date || ''}`,
-        sortDate: a.rescheduledAt, to: '/appointments',
-      }));
-
-      // Newly-received leads
-      leads.filter(l => /new|received/i.test(l.status || '')).slice(0, 10).forEach(l => items.push({
-        id: `lead-${l.id}`, text: `New lead: ${l.name || l.id}`, sortDate: l.updatedAt || l.createdAt || l.date, to: '/leads',
-      }));
-
-      items.sort((a, b) => new Date(b.sortDate || 0) - new Date(a.sortDate || 0));
-      setNotifs(items.slice(0, 25));
-    };
-    build();
-    return () => { active = false; };
-  }, [location.pathname]);
+    load();
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+  }, [load]);
 
   // Close the dropdown when clicking outside
   useEffect(() => {
@@ -84,19 +61,27 @@ export default function Topbar({ toggleSidebar }) {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
-  const unreadCount = notifs.filter(n => !readSet.has(n.id)).length;
-
-  const markAllRead = () => {
-    const set = new Set(readSet);
-    notifs.forEach(n => set.add(n.id));
-    saveReadSet(set);
-    setReadSet(set);
+  const markRead = async (n) => {
+    if (n.isRead) return;
+    // Optimistic update: flip the item + decrement the badge immediately.
+    setNotifs(prev => prev.map(x => x._id === n._id ? { ...x, isRead: true } : x));
+    setUnreadCount(c => Math.max(0, c - 1));
+    try {
+      await notificationsApi.markRead(n._id);
+    } catch {
+      load(); // reconcile with the server if the write failed
+    }
   };
 
-  const handleItemClick = (n) => {
-    const set = new Set(readSet); set.add(n.id); saveReadSet(set); setReadSet(set);
-    setOpen(false);
-    if (n.to) navigate(n.to);
+  const markAllRead = async () => {
+    if (unreadCount === 0) return;
+    setNotifs(prev => prev.map(x => ({ ...x, isRead: true })));
+    setUnreadCount(0);
+    try {
+      await notificationsApi.markAllRead();
+    } catch {
+      load();
+    }
   };
 
   return (
@@ -130,29 +115,47 @@ export default function Topbar({ toggleSidebar }) {
 
           {open && (
             <div
-              style={{ position: 'absolute', right: 0, top: 'calc(100% + 10px)', width: 340, maxHeight: 420, overflowY: 'auto', background: '#fff', border: '1px solid #E5E9F0', borderRadius: 12, boxShadow: '0 12px 32px rgba(15,23,42,0.16)', zIndex: 1000 }}
+              style={{ position: 'absolute', right: 0, top: 'calc(100% + 10px)', width: 360, maxHeight: 440, overflowY: 'auto', background: '#fff', border: '1px solid #E5E9F0', borderRadius: 12, boxShadow: '0 12px 32px rgba(15,23,42,0.16)', zIndex: 1000 }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1rem', borderBottom: '1px solid #EEF1F5', position: 'sticky', top: 0, background: '#fff' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#111827' }}>Notifications</span>
-                {notifs.length > 0 && (
-                  <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>Mark all read</button>
+                <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#111827' }}>
+                  Notifications{unreadCount > 0 ? ` (${unreadCount})` : ''}
+                </span>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllRead}
+                    style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Mark all as read
+                  </button>
                 )}
               </div>
               {notifs.length === 0 ? (
                 <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>You're all caught up.</div>
               ) : (
                 notifs.map(n => {
-                  const unread = !readSet.has(n.id);
+                  const unread = !n.isRead;
                   return (
                     <div
-                      key={n.id}
-                      onClick={() => handleItemClick(n)}
-                      style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '0.75rem 1rem', borderBottom: '1px solid #F4F6FA', cursor: 'pointer', background: unread ? '#F5F8FF' : '#fff' }}
+                      key={n._id}
+                      onClick={() => markRead(n)}
+                      style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '0.75rem 1rem', borderBottom: '1px solid #F4F6FA', cursor: unread ? 'pointer' : 'default', background: unread ? '#F5F8FF' : '#fff', borderLeft: unread ? '3px solid #4f46e5' : '3px solid transparent' }}
                     >
                       <span style={{ width: 8, height: 8, borderRadius: '50%', marginTop: 6, flexShrink: 0, background: unread ? '#4f46e5' : 'transparent' }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.85rem', color: '#1F2937', fontWeight: unread ? 600 : 500 }}>{n.text}</div>
-                        <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 2 }}>{timeAgo(n.sortDate)}</div>
+                        <div style={{ fontSize: '0.85rem', color: unread ? '#111827' : '#475569', fontWeight: unread ? 700 : 500 }}>{n.title}</div>
+                        <div style={{ fontSize: '0.8rem', color: unread ? '#334155' : '#64748B', marginTop: 1 }}>{n.message}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 }}>
+                          <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{timeAgo(n.eventAt || n.createdAt)}</span>
+                          {unread && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); markRead(n); }}
+                              style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                            >
+                              Mark as read
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

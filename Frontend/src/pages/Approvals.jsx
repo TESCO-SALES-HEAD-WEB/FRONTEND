@@ -31,7 +31,13 @@ const normPriority = (p) => {
 const mapQuotation = (q, leadsById) => {
   const lead = leadsById[q.leadId] || {};
   const requesterName = lead.manager || lead.name || lead.clientName || q.client || 'Unknown';
-  const status = String(q.approvalStatus || '').toLowerCase() === 'approved' ? 'approved' : 'pending';
+  // Map the persisted approvalStatus to the UI status so Rejected quotations actually show as
+  // Rejected (and appear under the Rejected/History tabs) instead of falling back to Pending.
+  const rawApproval = String(q.approvalStatus || '').toLowerCase();
+  const status = rawApproval === 'approved' ? 'approved'
+    : rawApproval === 'rejected' ? 'rejected'
+    : rawApproval === 'changes requested' ? 'changes_requested'
+    : 'pending';
   const projectLabel = q.project || 'Quotation';
   return {
     id: q.id,

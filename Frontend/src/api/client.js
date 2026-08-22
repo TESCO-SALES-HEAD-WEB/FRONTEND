@@ -1,5 +1,6 @@
-// Small API client for the Nexus CRM backend
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+// Small API client for the Nexus CRM backend.
+// Defaults to the PRODUCTION Sales Head API. Override with VITE_API_URL for local dev.
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api-saleshead.tescomanagement.com/api';
 
 export const getToken = () => localStorage.getItem('crm_token');
 
@@ -42,6 +43,13 @@ export async function api(path, { method = 'GET', body, auth = false } = {}) {
   if (!res.ok) throw new Error(data.message || 'Request failed');
   return data;
 }
+
+export const notificationsApi = {
+  getNotifications: () => api('/notifications'),
+  getUnreadCount: () => api('/notifications/unread-count'),
+  markRead: (id) => api(`/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllRead: () => api('/notifications/read-all', { method: 'PATCH' }),
+};
 
 export const authApi = {
   login: (role, email, password) =>

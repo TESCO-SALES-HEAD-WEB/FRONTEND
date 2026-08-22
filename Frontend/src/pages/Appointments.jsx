@@ -296,9 +296,17 @@ export default function Appointments() {
                         {apt.meetingRemarks && <div><span className="text-muted">Remarks:</span> {apt.meetingRemarks}</div>}
                         {apt.designRequest && apt.designRequest !== 'None' && <div><span className="text-muted">Design request:</span> {apt.designRequest}</div>}
                         {(apt.siteImage || apt.measurementImage) && (
-                          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
-                            {apt.siteImage && <a href={apt.siteImage} target="_blank" rel="noopener noreferrer" style={{ color: '#4F46E5' }}>Site image</a>}
-                            {apt.measurementImage && <a href={apt.measurementImage} target="_blank" rel="noopener noreferrer" style={{ color: '#4F46E5' }}>Measurement image</a>}
+                          <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
+                            {apt.siteImage && (
+                              <a href={apt.siteImage} target="_blank" rel="noopener noreferrer" title="Open site image">
+                                <img src={apt.siteImage} alt="Site" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #E5E7EB' }} />
+                              </a>
+                            )}
+                            {apt.measurementImage && (
+                              <a href={apt.measurementImage} target="_blank" rel="noopener noreferrer" title="Open measurement image">
+                                <img src={apt.measurementImage} alt="Measurement" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #E5E7EB' }} />
+                              </a>
+                            )}
                           </div>
                         )}
                       </div>

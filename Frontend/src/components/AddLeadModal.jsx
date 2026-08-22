@@ -555,10 +555,10 @@ export default function AddLeadModal({ viewMode = 'coordinator', onClose, editLe
 
         <div className="form-group" style={{ gridColumn: 'span 2' }}>
           <label className="form-label">Services</label>
-          <CustomDropdown 
-            value={step3Service} 
-            onChange={setStep3Service} 
-            options={['PEB Building', 'Tensile']} 
+          <CustomDropdown
+            value={step3Service}
+            onChange={setStep3Service}
+            options={['PEB Building', 'Tensile', 'Other roofing', 'Other Service']}
           />
         </div>
 

@@ -4,17 +4,34 @@ const routes = require('./routes');
 
 const app = express();
 
-// Allow the local dev frontends plus any origins listed in CLIENT_URL (comma-separated)
-const defaultOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+// Allow the local dev frontends, the Expo mobile app (web + native), and any origins
+// listed in CLIENT_URL (comma-separated).
+const defaultOrigins = [
+  'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175',
+  // Expo / Sales Head mobile app (web preview + Metro):
+  'http://localhost:8081', 'http://localhost:19006', 'http://localhost:19000',
+];
 const envOrigins = (process.env.CLIENT_URL || '')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
-const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
+const allowedOrigins = new Set([...defaultOrigins, ...envOrigins]);
+
+// Reflect known dev/LAN origins so the mobile app can call the same backend.
+// Native (React Native) requests send no Origin header and are always allowed.
+const corsOrigin = (origin, cb) => {
+  if (!origin) return cb(null, true); // native app / same-origin / curl
+  if (allowedOrigins.has(origin)) return cb(null, true);
+  // Any localhost / private-LAN origin (covers Expo on a phone via the PC's LAN IP).
+  if (/^https?:\/\/(localhost|127\.0\.0\.1|(?:10|192\.168|172\.(?:1[6-9]|2\d|3[01]))\.[\d.]+)(?::\d+)?$/.test(origin)) {
+    return cb(null, true);
+  }
+  return cb(null, false);
+};
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: corsOrigin,
     credentials: true,
   })
 );
