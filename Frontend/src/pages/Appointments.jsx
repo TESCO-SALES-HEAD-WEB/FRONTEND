@@ -88,7 +88,7 @@ export default function Appointments() {
       const data = await api('/appointments');
       // Cancelled appointments are kept in the DB (for the manager's notification) but
       // should not appear as active in the Head overview.
-      setAppointments(Array.isArray(data) ? data.filter(a => a.status !== 'Cancelled' && !a.cancelledAt) : []);
+      setAppointments(Array.isArray(data) ? data.filter(a => a.status !== 'Cancelled' && !a.cancelledAt).sort((a, b) => new Date(b.createdAt || b.updatedAt || b.date || 0) - new Date(a.createdAt || a.updatedAt || a.date || 0)) : []);
     } catch {
       setAppointments([]);
     }

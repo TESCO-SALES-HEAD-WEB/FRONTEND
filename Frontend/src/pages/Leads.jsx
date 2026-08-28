@@ -510,11 +510,10 @@ export default function Leads() {
     if (!inSelectedRange(lead.date || lead.createdAt)) return false;
     return true;
   }).sort((a, b) => {
-    // Newest first — by date, then by id as a tie-breaker
-    const da = new Date(a.date || a.createdAt || 0).getTime();
-    const db = new Date(b.date || b.createdAt || 0).getTime();
-    if (!isNaN(da) && !isNaN(db) && da !== db) return db - da;
-    return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+    // Newest first — by the real backend create/update time (never by id or name)
+    const da = new Date(a.createdAt || a.updatedAt || a.date || 0).getTime();
+    const db = new Date(b.createdAt || b.updatedAt || b.date || 0).getTime();
+    return (isNaN(db) ? 0 : db) - (isNaN(da) ? 0 : da);
   });
 
   // KPI counts — aligned with the Manager app so the overview matches across apps.
@@ -528,18 +527,20 @@ export default function Leads() {
              x.includes('appoint') || x.includes('appt') || x.includes('quotation') ||
              x.includes('order') || x.includes('lost'));
   };
-  const myApptRecords = apptRecords.filter(a => scopeMgr === 'all' || (a.manager || '') === scopeMgr);
-  const myLeadIdSet = new Set(managerLeads.map(l => l.id));
-  const totalLeads = managerLeads.length;
-  const newLeadsCount = managerLeads.filter(l => isNewStatus(l.status)).length;
-  const hotCount = managerLeads.filter(l => Sx(l.status).includes('hot')).length;
-  const warmCount = managerLeads.filter(l => Sx(l.status).includes('warm')).length;
-  const coldCount = managerLeads.filter(l => Sx(l.status).includes('cold')).length;
+  // Scope every KPI to the chosen calendar range so the overview numbers match the table.
+  const rangeLeads = managerLeads.filter(l => inSelectedRange(l.date || l.createdAt));
+  const myApptRecords = apptRecords.filter(a => (scopeMgr === 'all' || (a.manager || '') === scopeMgr) && inSelectedRange(a.date || a.createdAt));
+  const myLeadIdSet = new Set(rangeLeads.map(l => l.id));
+  const totalLeads = rangeLeads.length;
+  const newLeadsCount = rangeLeads.filter(l => isNewStatus(l.status)).length;
+  const hotCount = rangeLeads.filter(l => Sx(l.status).includes('hot')).length;
+  const warmCount = rangeLeads.filter(l => Sx(l.status).includes('warm')).length;
+  const coldCount = rangeLeads.filter(l => Sx(l.status).includes('cold')).length;
   const apptCount = myApptRecords.filter(a => !/visit/i.test(String(a.type || a.visitType || ''))).length;
-  const quotationCount = quoteRecords.filter(q => myLeadIdSet.has(q.leadId)).length;
-  const orderCount = managerLeads.filter(l => Sx(l.status).includes('order')).length;
-  const junkCount = managerLeads.filter(l => Sx(l.status).includes('junk')).length;
-  const lostCount = managerLeads.filter(l => Sx(l.status).includes('lost')).length;
+  const quotationCount = quoteRecords.filter(q => myLeadIdSet.has(q.leadId) && inSelectedRange(q.date || q.createdAt)).length;
+  const orderCount = rangeLeads.filter(l => Sx(l.status).includes('order')).length;
+  const junkCount = rangeLeads.filter(l => Sx(l.status).includes('junk')).length;
+  const lostCount = rangeLeads.filter(l => Sx(l.status).includes('lost')).length;
 
   return (
     <div className="leads-page">

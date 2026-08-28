@@ -47,7 +47,7 @@ export default function Orders() {
     (async () => {
       try {
         const projects = await api('/projects');
-        const mapped = (Array.isArray(projects) ? projects : [])
+        const mapped = (Array.isArray(projects) ? [...projects].sort((a, b) => new Date(b.createdAt || b.updatedAt || b.date || 0) - new Date(a.createdAt || a.updatedAt || a.date || 0)) : [])
           .map(p => ({
             id: p.id,                                             // File ID e.g. PF-1001
             leadId: p.leadId || '',                               // originating Lead ID (may be blank on old records)

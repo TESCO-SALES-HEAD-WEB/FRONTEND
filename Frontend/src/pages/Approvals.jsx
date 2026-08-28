@@ -98,7 +98,7 @@ export default function Approvals() {
         const mgrById = {};
         (Array.isArray(leads) ? leads : []).forEach(l => { if (l && l.id) { leadsById[l.id] = l; mgrById[l.id] = l.manager; } });
         // Only PREPARED quotations are sent to the Sales Head for approval
-        const mapped = (Array.isArray(quotations) ? quotations : [])
+        const mapped = (Array.isArray(quotations) ? [...quotations].sort((a, b) => new Date(b.createdAt || b.updatedAt || b.date || 0) - new Date(a.createdAt || a.updatedAt || a.date || 0)) : [])
           .filter(q => String(q.quotationStatus || '').toLowerCase() === 'prepared')
           .map(q => mapQuotation(q, leadsById));
         if (!cancelled) { setApprovalsData(mapped); setLeadManagerById(mgrById); }

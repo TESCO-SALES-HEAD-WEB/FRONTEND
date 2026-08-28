@@ -84,7 +84,7 @@ export default function Pipeline() {
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      api('/leads').then(d => { if (!cancelled && Array.isArray(d)) setLeads(d); }).catch(() => {});
+      api('/leads').then(d => { if (!cancelled && Array.isArray(d)) setLeads([...d].sort((a, b) => new Date(b.createdAt || b.updatedAt || b.date || 0) - new Date(a.createdAt || a.updatedAt || a.date || 0))); }).catch(() => {});
       api('/pipeline').then(d => { if (!cancelled && Array.isArray(d)) setExtras(d); }).catch(() => {});
     };
     load();
