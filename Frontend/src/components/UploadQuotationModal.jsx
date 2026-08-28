@@ -45,10 +45,20 @@ export default function UploadQuotationModal({ isOpen, onClose, onCreated }) {
     return () => { mounted = false; };
   }, [isOpen]);
 
+  // Only PDF quotations are accepted — images (or any non-PDF) are rejected so a quotation
+  // can never bypass approval by being uploaded as a picture.
+  const isPdfFile = (file) => file && (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || ''));
+
   // Read the chosen PDF into the new-quote state (attached on Upload)
   const handleModalFileChange = (event) => {
     const file = event.target.files[0];
     if (!file) { setNewQuote(prev => ({ ...prev, fileName: null, fileData: null })); return; }
+    if (!isPdfFile(file)) {
+      showToast('Only PDF files are allowed. Please upload the quotation as a PDF.', 'error');
+      event.target.value = '';
+      setNewQuote(prev => ({ ...prev, fileName: null, fileData: null }));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const tooBig = file.size > 5 * 1024 * 1024;
@@ -106,6 +116,10 @@ export default function UploadQuotationModal({ isOpen, onClose, onCreated }) {
       showToast(`This lead already has a ${String(active.approvalStatus).toLowerCase()} quotation (${active.id}). A new one is allowed only after it is rejected.`, 'error');
       return;
     }
+    if (!newQuote.fileName) {
+      showToast('A PDF quotation file is required before uploading.', 'error');
+      return;
+    }
     const newId = nextQuoteId(quotes);
 
     // Ensure the amount value carries a ₹ symbol; keep GST empty when not provided
@@ -149,7 +163,7 @@ export default function UploadQuotationModal({ isOpen, onClose, onCreated }) {
 
   if (!isOpen) return null;
 
-  const submitDisabled = submitting || !newQuote.leadId || !newQuote.client || !newQuote.project || !newQuote.amount;
+  const submitDisabled = submitting || !newQuote.leadId || !newQuote.client || !newQuote.project || !newQuote.amount || !newQuote.fileName;
 
   return (
     <div className="modal-overlay">

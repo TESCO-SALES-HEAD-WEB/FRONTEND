@@ -13,7 +13,7 @@ const PAYMENT_METHODS = ['Bank Transfer', 'UPI', 'Cheque', 'Cash'];
 const emptyForm = {
   id: '', leadId: '', customer: '', orderValue: '', invoiceValue: '',
   amountCollected: '', pendingPayments: '', upcomingDues: '', overduePayments: '',
-  method: '', transactionId: '', paymentDate: '', dueDate: '', manager: '', notes: '',
+  method: '', transactionId: '', cashPaidBy: '', paymentDate: '', dueDate: '', manager: '', notes: '',
 };
 
 export default function RecordPaymentModal({ isOpen, onClose, payment, onSave = () => {} }) {
@@ -44,6 +44,7 @@ export default function RecordPaymentModal({ isOpen, onClose, payment, onSave = 
       overduePayments: payment?.overduePayments ?? '',
       method: payment?.method && payment.method !== '-' ? payment.method : '',
       transactionId: payment?.transactionId || '',
+      cashPaidBy: payment?.cashPaidBy || '',
       paymentDate: payment?.paymentDate || '',
       dueDate: payment?.dueDate || '',
       manager: payment?.manager || '',
@@ -119,6 +120,7 @@ export default function RecordPaymentModal({ isOpen, onClose, payment, onSave = 
       overduePayments: parseAmount(form.overduePayments),
       method: (form.method || '').trim(),
       transactionId: (form.transactionId || '').trim(),
+      cashPaidBy: form.method === 'Cash' ? (form.cashPaidBy || '').trim() : '',
       paymentDate: form.paymentDate || '',
       dueDate: form.dueDate || '',
       notes: (form.notes || '').trim(),
@@ -217,6 +219,13 @@ export default function RecordPaymentModal({ isOpen, onClose, payment, onSave = 
                 <label className="form-label-caps">TRANSACTION ID / CHEQUE NO.</label>
                 <input type="text" className="form-input" placeholder="e.g. TXN123456 / CHQ-0012" value={form.transactionId} onChange={(e) => set('transactionId', e.target.value)} />
               </div>
+
+              {form.method === 'Cash' && (
+                <div className="form-group form-group-2-span" style={{ gridColumn: '1 / -1' }}>
+                  <label className="form-label-caps">CASH RECEIVED FROM (PAID BY)</label>
+                  <input type="text" className="form-input" placeholder="Name of the person who paid the cash" value={form.cashPaidBy} onChange={(e) => set('cashPaidBy', e.target.value)} />
+                </div>
+              )}
 
               <div className="form-group">
                 <label className="form-label-caps">PAYMENT DATE</label>

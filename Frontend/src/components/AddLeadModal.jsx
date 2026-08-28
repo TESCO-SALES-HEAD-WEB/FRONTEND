@@ -80,7 +80,7 @@ export default function AddLeadModal({ viewMode = 'coordinator', onClose, editLe
 
   // ── Edit-mode form state (prefilled from the selected lead) ──
   const [editForm, setEditForm] = useState({
-    name: '', company: '', phone: '', email: '', source: '', service: '',
+    name: '', company: '', phone: '', email: '', source: '', service: '', otherService: '',
     projectType: '', location: '', value: '', manager: 'Unassigned',
     priority: 'Medium', status: 'New Lead', designReq: '', followUp: '', notes: '',
   });
@@ -88,13 +88,16 @@ export default function AddLeadModal({ viewMode = 'coordinator', onClose, editLe
 
   useEffect(() => {
     if (!editLead) return;
+    const svc = editLead.service || '';
+    const known = EDIT_SERVICE_OPTIONS.includes(svc);
     setEditForm({
       name: editLead.name || '',
       company: editLead.company || '',
       phone: editLead.phone || '',
       email: editLead.email || '',
       source: editLead.source || '',
-      service: editLead.service || '',
+      service: (svc && !known) ? 'Other' : svc,
+      otherService: (svc && !known) ? svc : '',
       projectType: editLead.projectType || '',
       location: editLead.location || '',
       value: editLead.value ?? editLead.projectValue ?? editLead.budget ?? '',
@@ -118,7 +121,7 @@ export default function AddLeadModal({ viewMode = 'coordinator', onClose, editLe
       phone: editForm.phone,
       email: editForm.email,
       source: editForm.source,
-      service: editForm.service,
+      service: (editForm.service === 'Other' && editForm.otherService.trim()) ? editForm.otherService.trim() : editForm.service,
       projectType: editForm.projectType,
       location: editForm.location,
       value: editForm.value,
@@ -177,6 +180,9 @@ export default function AddLeadModal({ viewMode = 'coordinator', onClose, editLe
             <option value="">Select Service</option>
             {EDIT_SERVICE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
+          {editForm.service === 'Other' && (
+            <input type="text" className="form-input" style={{ marginTop: '0.5rem' }} placeholder="Type the service name" value={editForm.otherService} onChange={(e) => setEF('otherService', e.target.value)} />
+          )}
         </div>
 
         <div className="form-group">

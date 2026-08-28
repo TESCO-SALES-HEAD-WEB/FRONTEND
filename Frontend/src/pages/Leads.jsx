@@ -485,18 +485,36 @@ export default function Leads() {
   const [selectedLeadSource, setSelectedLeadSource] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedDesignReq, setSelectedDesignReq] = useState('All');
+  const [range, setRange] = useState({ start: null, end: null });
 
   // Manager View scopes to the selected manager (matching a real Manager account);
   // Coordinator View is org-wide (matching a real Coordinator account).
   const scopeMgr = viewMode === 'manager' ? manager : 'all';
   const managerLeads = scopeMgr === 'all' ? leadsData : leadsData.filter(l => l.manager === scopeMgr);
 
+  // A lead is in the picked calendar range (inclusive). Undated leads are never hidden.
+  const inSelectedRange = (v) => {
+    if (!range.start || !range.end) return true;
+    const t = new Date(v).getTime();
+    if (isNaN(t)) return true;
+    const a = new Date(range.start); a.setHours(0, 0, 0, 0);
+    const b = new Date(range.end); b.setHours(23, 59, 59, 999);
+    return t >= a.getTime() && t <= b.getTime();
+  };
+
   // Filter Logic
   const filteredLeads = managerLeads.filter(lead => {
     if (selectedService !== 'All' && String(lead.service || '').toUpperCase() !== selectedService.toUpperCase()) return false;
     if (selectedLeadSource !== 'All' && String(lead.source || '').toUpperCase() !== selectedLeadSource.toUpperCase()) return false;
     if (selectedStatus !== 'All' && String(lead.status || '').toUpperCase() !== selectedStatus.toUpperCase()) return false;
+    if (!inSelectedRange(lead.date || lead.createdAt)) return false;
     return true;
+  }).sort((a, b) => {
+    // Newest first — by date, then by id as a tie-breaker
+    const da = new Date(a.date || a.createdAt || 0).getTime();
+    const db = new Date(b.date || b.createdAt || 0).getTime();
+    if (!isNaN(da) && !isNaN(db) && da !== db) return db - da;
+    return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
   });
 
   // KPI counts — aligned with the Manager app so the overview matches across apps.
@@ -550,7 +568,7 @@ export default function Leads() {
       </div>
 
       <div className="leads-filters">
-        <DateRangePicker />
+        <DateRangePicker onApply={(s, e) => setRange({ start: s, end: e })} />
         <ScopeFilter />
       </div>
 
@@ -865,6 +883,7 @@ export default function Leads() {
         onClose={() => { setWizardOpen(false); setWizardLead(null); }}
         onSave={handleWizardSave}
         editLead={wizardLead}
+        managers={managers}
       />
 
       {/* Junk confirmation modal (replaces the native confirm dialog) */}

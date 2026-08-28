@@ -68,7 +68,7 @@ export default function Payments() {
     (async () => {
       try {
         const data = await api('/payments');
-        if (active) setPaymentsData(Array.isArray(data) ? data : []);
+        if (active) setPaymentsData(Array.isArray(data) ? [...data].sort((a, b) => new Date(b.createdAt || b.paymentDate || b.dueDate || 0) - new Date(a.createdAt || a.paymentDate || a.dueDate || 0)) : []);
       } catch {
         if (active) setPaymentsData([]);
       }
@@ -90,7 +90,7 @@ export default function Payments() {
 
   const refreshPayments = async () => {
     const data = await api('/payments');
-    setPaymentsData(Array.isArray(data) ? data : []);
+    setPaymentsData(Array.isArray(data) ? [...data].sort((a, b) => new Date(b.createdAt || b.paymentDate || b.dueDate || 0) - new Date(a.createdAt || a.paymentDate || a.dueDate || 0)) : []);
   };
 
   // ── Manager options for the drawer (roster + managers seen on the leads) ──

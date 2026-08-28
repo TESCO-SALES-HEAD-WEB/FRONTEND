@@ -60,6 +60,7 @@ export default function Dashboard() {
   const [loginCoordinators, setLoginCoordinators] = useState([]); // coordinators with a login account
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [range, setRange] = useState({ start: null, end: null });
 
   // Pull all live data from the shared CRM database
   useEffect(() => {
@@ -121,18 +122,19 @@ export default function Dashboard() {
   const m = useMemo(() => {
     const isManagerView = viewMode === 'manager';
     const inMgr = (mgr) => scopeManager === 'all' || mgr === scopeManager;
+    const inDate = (v) => { if (!range.start || !range.end) return true; const t = new Date(v).getTime(); if (isNaN(t)) return true; const a = new Date(range.start); a.setHours(0,0,0,0); const b = new Date(range.end); b.setHours(23,59,59,999); return t >= a.getTime() && t <= b.getTime(); };
 
-    const fLeads = leads.filter((l) => inMgr(l.manager));
+    const fLeads = leads.filter((l) => inMgr(l.manager) && inDate(l.date || l.createdAt));
     // Appointments: Manager View scopes by the appointment's manager; Coordinator View = all
-    const fAppts = isManagerView ? appointments.filter((a) => inMgr(a.manager)) : appointments;
-    const fPays = payments.filter((p) => inMgr(p.manager));
+    const fAppts = (isManagerView ? appointments.filter((a) => inMgr(a.manager)) : appointments).filter((a) => inDate(a.date || a.createdAt));
+    const fPays = payments.filter((p) => inMgr(p.manager) && inDate(p.date || p.createdAt));
     // Quotations: Manager View = quotations raised against this manager's leads (matches the
     // Manager dashboard's myQuotes); Coordinator View = all quotations (matches the Coordinator).
     const myLeadIds = new Set(fLeads.map((l) => l.id));
-    const fQuotes = isManagerView ? quotations.filter((q) => myLeadIds.has(q.leadId)) : quotations;
+    const fQuotes = (isManagerView ? quotations.filter((q) => myLeadIds.has(q.leadId)) : quotations).filter((q) => inDate(q.date || q.createdAt));
     // Order Confirmations are the real handover/project documents (both real dashboards use
     // the full projects list length).
-    const fProjects = projects;
+    const fProjects = projects.filter((p) => inDate(p.date || p.createdAt));
 
     // Appointment type + completion helpers (identical to the Coordinator/Manager appt pages)
     const isVisit = (a) => /visit/i.test(a.type || a.visitType || '');
@@ -181,7 +183,7 @@ export default function Dashboard() {
       pending: sumPay('pendingPayments'),
       overdue: sumPay('overduePayments'),
     };
-  }, [leads, appointments, quotations, projects, payments, leadManagerById, scopeManager, viewMode]);
+  }, [leads, appointments, quotations, projects, payments, leadManagerById, scopeManager, viewMode, range]);
 
   // Per-manager summary rows (for the breakdown / drill-down table)
   const managerRows = useMemo(() => managers.map((mgr) => {
@@ -217,7 +219,7 @@ export default function Dashboard() {
         </div>
 
         <div className="dashboard-filters">
-          <DateRangePicker />
+          <DateRangePicker onApply={(s, e) => setRange({ start: s, end: e })} />
           <ScopeFilter />
         </div>
       </div>

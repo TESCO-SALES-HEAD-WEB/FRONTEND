@@ -65,7 +65,7 @@ export default function Quotations() {
 
   const reloadQuotations = async () => {
     const qs = await api('/quotations').catch(() => []);
-    setQuotations(Array.isArray(qs) ? qs : []);
+    setQuotations(Array.isArray(qs) ? [...qs].sort((a, b) => (new Date(b.createdAt || 0) - new Date(a.createdAt || 0)) || String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true })) : []);
   };
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function Quotations() {
           api('/auth/managers').catch(() => [])
         ]);
         if (!mounted) return;
-        setQuotations(Array.isArray(qs) ? qs : []);
+        setQuotations(Array.isArray(qs) ? [...qs].sort((a, b) => (new Date(b.createdAt || 0) - new Date(a.createdAt || 0)) || String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true })) : []);
         setLeads(Array.isArray(lds) ? lds : []);
         setManagers(Array.isArray(mgrs) ? mgrs : []);
       } catch (e) {

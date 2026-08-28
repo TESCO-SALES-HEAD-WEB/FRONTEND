@@ -35,17 +35,18 @@ function startOfDay(d) {
   return dt;
 }
 
-export default function DateRangePicker() {
+export default function DateRangePicker({ onApply } = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [activePreset, setActivePreset] = useState('Last 30 Days');
   const dropdownRef = useRef(null);
   
   // Set default state to match screenshot (July 16, 2026)
-  const baseDate = new Date(2026, 6, 16); // July 16, 2026
+  const baseDate = new Date(); // today
   
   const [currentMonth, setCurrentMonth] = useState(baseDate);
-  const [startDate, setStartDate] = useState(new Date(2026, 5, 17)); // Jun 17
-  const [endDate, setEndDate] = useState(baseDate); // Jul 16
+  const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0,0,0,0); return d; });
+  const [endDate, setEndDate] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
+  useEffect(() => { if (typeof onApply === 'function' && startDate && endDate) onApply(startDate, endDate); }, [startDate, endDate]);
 
   // Close dropdown on outside click
   useEffect(() => {
