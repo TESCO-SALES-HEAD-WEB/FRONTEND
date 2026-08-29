@@ -4,7 +4,7 @@ const Project = require('../models/Project');
 // GET /api/projects — all
 router.get('/', async (req, res) => {
   try {
-    const projects = await Project.find().sort({ createdAt: 1 });
+    const projects = await Project.find().sort({ createdAt: -1 });
     res.json(projects);
   } catch (err) {
     res.status(500).json({ message: err.message });

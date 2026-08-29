@@ -4,7 +4,7 @@ const Payment = require('../models/Payment');
 // GET /api/payments — all
 router.get('/', async (req, res) => {
   try {
-    const payments = await Payment.find().sort({ createdAt: 1 });
+    const payments = await Payment.find().sort({ createdAt: -1 });
     res.json(payments);
   } catch (err) {
     res.status(500).json({ message: err.message });

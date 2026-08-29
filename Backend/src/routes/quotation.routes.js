@@ -4,7 +4,7 @@ const Quotation = require('../models/Quotation');
 // GET /api/quotations — all
 router.get('/', async (req, res) => {
   try {
-    const quotes = await Quotation.find().select('-fileData').sort({ createdAt: 1 });
+    const quotes = await Quotation.find().select('-fileData').sort({ createdAt: -1 });
     res.json(quotes);
   } catch (err) {
     res.status(500).json({ message: err.message });

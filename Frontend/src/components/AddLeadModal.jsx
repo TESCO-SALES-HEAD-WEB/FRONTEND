@@ -23,6 +23,22 @@ const EDIT_STATUS_MAP = {
 };
 const editCanonStatus = (v) => EDIT_STATUS_MAP[String(v || '').trim().toLowerCase()] || v || 'New Lead';
 
+// Convert any stored follow-up value into a datetime-local value (YYYY-MM-DDTHH:mm).
+const toDateInput = (v) => {
+  if (!v || typeof v !== 'string') return '';
+  const s = v.trim();
+  if (s === 'No Date' || s === 'Pending' || s === '') return '';
+  let dPart = '', tPart = '', m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/))) { dPart = `${m[1]}-${m[2]}-${m[3]}`; tPart = `${m[4]}:${m[5]}`; }
+  else if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) { dPart = `${m[1]}-${m[2]}-${m[3]}`; }
+  else if ((m = s.match(/(\d{2})-(\d{2})-(\d{4})[,\s]+(\d{1,2}):(\d{2})\s*([AaPp][Mm])/))) { let h = parseInt(m[4], 10); const ap = m[6].toUpperCase(); if (ap === 'PM' && h !== 12) h += 12; if (ap === 'AM' && h === 12) h = 0; dPart = `${m[3]}-${m[2]}-${m[1]}`; tPart = `${String(h).padStart(2, '0')}:${m[5]}`; }
+  else if ((m = s.match(/(\d{2})-(\d{2})-(\d{4})[,\s]+(\d{2}):(\d{2})/))) { dPart = `${m[3]}-${m[2]}-${m[1]}`; tPart = `${m[4]}:${m[5]}`; }
+  else if ((m = s.match(/(\d{2})-(\d{2})-(\d{4})/))) { dPart = `${m[3]}-${m[2]}-${m[1]}`; }
+  else { const d = new Date(s); if (!isNaN(d.getTime())) { dPart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; tPart = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } }
+  if (!dPart) return '';
+  return `${dPart}T${tPart || '09:00'}`;
+};
+
 const CustomDropdown = ({ options, value, onChange, placeholder = "Select...", openUpward = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -226,8 +242,8 @@ export default function AddLeadModal({ viewMode = 'coordinator', onClose, editLe
           </select>
         </div>
         <div className="form-group">
-          <label className="form-label">Next Follow-up Date</label>
-          <input type="date" className="form-input" value={editForm.followUp || ''} onChange={(e) => setEF('followUp', e.target.value)} />
+          <label className="form-label">Next Follow-up Date &amp; Time</label>
+          <input type="datetime-local" className="form-input" value={toDateInput(editForm.followUp)} onChange={(e) => setEF('followUp', e.target.value)} />
         </div>
 
         <div className="form-group" style={{ gridColumn: 'span 2' }}>

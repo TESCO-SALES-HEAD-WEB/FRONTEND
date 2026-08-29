@@ -15,7 +15,7 @@ const maxQuoteNum = (rows) => rows.reduce((m, q) => {
 const nextQuoteId = (rows) => `QT-${maxQuoteNum(rows) + 1}`;
 
 const EMPTY_QUOTE = {
-  leadId: '', client: '', project: '', amount: '', gst: '',
+  leadId: '', client: '', project: '', amount: '', gst: '', priority: 'Medium',
   quotationType: 'Initial Quotation', approvalStatus: 'Pending',
   quotationStatus: 'In Preparation', revision: 'Rev 0', fileName: null, fileData: null,
 };
@@ -255,6 +255,22 @@ export default function UploadQuotationModal({ isOpen, onClose, onCreated }) {
                     <option value="Initial Quotation">Initial Quotation</option>
                     <option value="Revised Quotation">Revised Quotation</option>
                     <option value="Final Quotation">Final Quotation</option>
+                  </select>
+                  <ChevronDown size={16} className="select-icon" />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Priority</label>
+                <div className="custom-select-wrapper">
+                  <select
+                    className="form-select"
+                    value={newQuote.priority}
+                    onChange={(e) => setNewQuote({ ...newQuote, priority: e.target.value })}
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
                   </select>
                   <ChevronDown size={16} className="select-icon" />
                 </div>

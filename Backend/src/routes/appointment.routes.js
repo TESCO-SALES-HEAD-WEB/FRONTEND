@@ -4,7 +4,7 @@ const Appointment = require('../models/Appointment');
 // GET /api/appointments — all appointments
 router.get('/', async (req, res) => {
   try {
-    const appts = await Appointment.find().sort({ createdAt: 1 });
+    const appts = await Appointment.find().sort({ createdAt: -1 });
     res.json(appts);
   } catch (err) {
     res.status(500).json({ message: err.message });

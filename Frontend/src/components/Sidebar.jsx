@@ -106,12 +106,14 @@ export default function Sidebar({ isCollapsed, toggleCollapse }) {
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar__header">
-        <div className="sidebar__logo-container">
-          <div className="sidebar__logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-            <Building2 size={18} strokeWidth={2.2} />
+        {isCollapsed ? (
+          <h1 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--sidebar-text)', letterSpacing: '-0.01em' }}>SC</h1>
+        ) : (
+          <div className="sidebar__brand">
+            <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--sidebar-text)', letterSpacing: '-0.01em', lineHeight: 1.15 }}>SalesCRM</h1>
+            <span style={{ display: 'block', marginTop: '3px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--sidebar-text-muted)', letterSpacing: '0.05em' }}>Tesco Structures</span>
           </div>
-          {!isCollapsed && <span className="sidebar__role-pill">Sales Head</span>}
-        </div>
+        )}
       </div>
 
       <nav className="sidebar__nav">

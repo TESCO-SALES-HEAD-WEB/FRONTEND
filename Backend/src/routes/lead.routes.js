@@ -15,16 +15,27 @@ const SOURCE_MAP = {
   cold: 'Cold Calling'
 };
 
-// Generate the next sequential lead id like "LD-1029".
-// Falls back to a timestamp id if a race causes a duplicate.
+// Next sequential lead id: LD-0018 after LD-0017. Only real sequential ids count —
+// legacy timestamp ids (13-digit) are ignored so they never poison the sequence.
 async function nextLeadId() {
-  const last = await Lead.findOne({ id: /^LD-\d+$/ }).sort({ createdAt: -1 }).lean();
-  let n = 1000;
-  if (last && last.id) {
-    const parsed = parseInt(last.id.replace(/\D/g, ''), 10);
-    if (!Number.isNaN(parsed)) n = parsed;
+  const rows = await Lead.find({ id: /^LD-\d+$/ }).select('id').lean();
+  let max = 0;
+  for (const r of rows) {
+    const n = parseInt(String(r.id).replace(/\D/g, ''), 10);
+    if (!Number.isNaN(n) && n < 1000000 && n > max) max = n;
   }
-  return `LD-${n + 1}`;
+  return `LD-${String(max + 1).padStart(4, '0')}`;
+}
+
+// Create a lead with a freshly generated unique LD-#### id (retries if the id is taken).
+async function createLeadUnique(payload) {
+  const p = { ...payload };
+  for (let i = 0; i < 50; i++) {
+    p.id = await nextLeadId();
+    try { return await Lead.create(p); }
+    catch (e) { if (e && e.code === 11000) continue; throw e; }
+  }
+  throw new Error('Could not allocate a unique Lead ID');
 }
 
 // POST /api/leads/intake — secured endpoint for n8n automation.
@@ -40,9 +51,7 @@ router.post('/intake', verifyApiKey, async (req, res) => {
     const displayDate = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const stamp = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-US', { hour12: false });
 
-    const id = await nextLeadId();
     const payload = {
-      id,
       type: 'new leads',
       date: displayDate,
       name: fullName || name || 'Unknown',
@@ -61,17 +70,7 @@ router.post('/intake', verifyApiKey, async (req, res) => {
       ]
     };
 
-    let lead;
-    try {
-      lead = await Lead.create(payload);
-    } catch (e) {
-      if (e && e.code === 11000) {
-        payload.id = `LD-${Date.now()}`;
-        lead = await Lead.create(payload);
-      } else {
-        throw e;
-      }
-    }
+    const lead = await createLeadUnique(payload);
 
     res.status(201).json({ success: true, id: lead.id, _id: lead._id });
   } catch (err) {
@@ -82,7 +81,7 @@ router.post('/intake', verifyApiKey, async (req, res) => {
 // GET /api/leads — all leads
 router.get('/', async (req, res) => {
   try {
-    const leads = await Lead.find().sort({ createdAt: 1 });
+    const leads = await Lead.find().sort({ createdAt: -1 });
     res.json(leads);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -93,19 +92,8 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const body = { ...req.body };
-    if (!body.id) body.id = await nextLeadId();
-
-    let lead;
-    try {
-      lead = await Lead.create(body);
-    } catch (e) {
-      if (e && e.code === 11000) {
-        body.id = `LD-${Date.now()}`;
-        lead = await Lead.create(body);
-      } else {
-        throw e;
-      }
-    }
+    delete body.id; // always assign a fresh sequential LD-#### id on create
+    const lead = await createLeadUnique(body);
     res.status(201).json(lead);
   } catch (err) {
     res.status(400).json({ message: err.message });

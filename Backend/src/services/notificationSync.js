@@ -43,6 +43,29 @@ const money = (v) => {
 };
 
 const has = (v) => v != null && String(v).trim() !== '';
+
+// ── Payment due-date helpers ──
+const numAmt = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.]/g, '')); return isNaN(n) ? 0 : n; };
+const amountDue = (p) => {
+  const pending = numAmt(p.pendingPayments);
+  if (pending > 0) return pending;
+  const order = numAmt(p.orderValue) || numAmt(p.invoiceValue);
+  return Math.max(0, order - numAmt(p.amountCollected));
+};
+const isPaidUp = (p) => {
+  const st = String(p.status || '').toLowerCase();
+  if (/paid|complete|closed|settled/.test(st)) return true;
+  return amountDue(p) <= 0;
+};
+const dueInfo = (dueDate) => {
+  const d = toDate(dueDate);
+  if (!d) return null;
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  const dd = new Date(d); dd.setHours(0, 0, 0, 0);
+  const days = Math.round((dd.getTime() - t0.getTime()) / 86400000);
+  const dueKey = `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}-${String(dd.getDate()).padStart(2, '0')}`;
+  return { days, dueStr: shortDate(dueDate), dueKey };
+};
 const isUnassigned = (v) => !has(v) || /^unassigned$/i.test(String(v).trim());
 
 // Throttle: the sync is called on every notifications load + 30s poll. Keep it cheap by
@@ -217,17 +240,49 @@ async function runSync() {
   // --- Payments: payment received ---------------------------------------------------
   for (const pay of payments) {
     const id = pay.id || pay._id;
+    if (!has(id)) continue;
+    const ref = pay.leadId ? `Lead ${pay.leadId}` : (pay.customer || 'the customer');
+    const cust = pay.customer || pay.clientName || 'customer';
     const collected = Number(pay.amountCollected) || 0;
-    if (!has(id) || collected <= 0) continue;
-    const who = pay.customer || pay.leadId || 'customer';
-    add(`payment-received:${id}`, {
-      type: 'PAYMENT_RECEIVED',
-      title: 'Payment Received',
-      message: `${money(collected)} recorded for ${who}.`,
-      entityType: 'payment',
-      entityId: String(id),
-      eventAt: eventTime(pay, pay.paymentDate)
-    });
+
+    if (collected > 0) {
+      add(`payment-received:${id}`, {
+        type: 'PAYMENT_RECEIVED',
+        title: 'Payment Received',
+        message: `${money(collected)} recorded for ${pay.customer || pay.leadId || 'customer'}.`,
+        entityType: 'payment',
+        entityId: String(id),
+        eventAt: eventTime(pay, pay.paymentDate)
+      });
+    }
+
+    // Payment due-date reminders — only while a balance is still due (stops once paid).
+    const due = amountDue(pay);
+    const di = dueInfo(pay.dueDate);
+    if (di && due > 0 && !isPaidUp(pay)) {
+      const who = `${ref} (${cust})`;
+      const amt = money(due);
+      const when = eventTime(pay, pay.dueDate);
+      if (di.days > 0 && di.days <= 3) {
+        add(`payment-due-soon:${id}:${di.dueKey}`, {
+          type: 'PAYMENT_DUE_SOON', title: 'Payment Due Soon',
+          message: `Payment of ${amt} for ${who} is due on ${di.dueStr} (in ${di.days} day${di.days > 1 ? 's' : ''}).`,
+          entityType: 'payment', entityId: String(id), eventAt: when
+        });
+      } else if (di.days === 0) {
+        add(`payment-due-today:${id}:${di.dueKey}`, {
+          type: 'PAYMENT_DUE_TODAY', title: 'Payment Due Today',
+          message: `Payment of ${amt} for ${who} is due today (${di.dueStr}).`,
+          entityType: 'payment', entityId: String(id), eventAt: when
+        });
+      } else if (di.days < 0) {
+        add(`payment-overdue:${id}:${di.dueKey}`, {
+          type: 'PAYMENT_OVERDUE', title: 'Payment Overdue',
+          message: `Payment of ${amt} for ${who} is overdue — was due ${di.dueStr} (${Math.abs(di.days)} day${Math.abs(di.days) > 1 ? 's' : ''} ago).`,
+          entityType: 'payment', entityId: String(id), eventAt: when
+        });
+      }
+    }
   }
 
   if (ops.length) {

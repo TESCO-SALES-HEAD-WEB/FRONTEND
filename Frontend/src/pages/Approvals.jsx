@@ -58,7 +58,7 @@ const mapQuotation = (q, leadsById) => {
     requestedValue: q.quotationStatus || 'Approval',
     age: lead.date || '',
     isOverdue: false,
-    priority: normPriority(lead.priority),
+    priority: normPriority(q.priority || lead.priority),
     status,
     dateRaised: lead.date || '',
     reason: `Quotation ${q.id} for ${q.client || 'client'}${q.project ? ' — ' + q.project : ''}. GST: ${q.gst || 'N/A'}. Awaiting Sales Head approval.`,

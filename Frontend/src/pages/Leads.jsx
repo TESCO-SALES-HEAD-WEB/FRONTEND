@@ -18,6 +18,43 @@ import { useViewMode } from '../context/ViewModeContext';
 import { statusColor, sourceColor } from '../utils/statusColors';
 import './Leads.css';
 
+// Parse any stored follow-up value into { dPart:'YYYY-MM-DD', tPart:'HH:mm' } (tPart may be '')
+const parseFollowUp = (v) => {
+  if (!v || typeof v !== 'string') return null;
+  const s = v.trim();
+  if (s === 'No Date' || s === 'Pending' || s === '') return null;
+  let dPart = '', tPart = '', m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/))) { dPart = `${m[1]}-${m[2]}-${m[3]}`; tPart = `${m[4]}:${m[5]}`; }
+  else if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) { dPart = `${m[1]}-${m[2]}-${m[3]}`; }
+  else if ((m = s.match(/(\d{2})-(\d{2})-(\d{4})[,\s]+(\d{1,2}):(\d{2})\s*([AaPp][Mm])/))) { let h = parseInt(m[4], 10); const ap = m[6].toUpperCase(); if (ap === 'PM' && h !== 12) h += 12; if (ap === 'AM' && h === 12) h = 0; dPart = `${m[3]}-${m[2]}-${m[1]}`; tPart = `${String(h).padStart(2, '0')}:${m[5]}`; }
+  else if ((m = s.match(/(\d{2})-(\d{2})-(\d{4})[,\s]+(\d{2}):(\d{2})/))) { dPart = `${m[3]}-${m[2]}-${m[1]}`; tPart = `${m[4]}:${m[5]}`; }
+  else if ((m = s.match(/(\d{2})-(\d{2})-(\d{4})/))) { dPart = `${m[3]}-${m[2]}-${m[1]}`; }
+  else { const d = new Date(s); if (!isNaN(d.getTime())) { dPart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; tPart = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } }
+  if (!dPart) return null;
+  return { dPart, tPart };
+};
+
+// Convert any stored follow-up value into a datetime-local value (YYYY-MM-DDTHH:mm)
+const toFollowUpInput = (v) => {
+  const p = parseFollowUp(v);
+  if (!p) return '';
+  return `${p.dPart}T${p.tPart || '09:00'}`;
+};
+
+// Display a follow-up value as "DD-MM-YYYY, hh:mm AM/PM" (date only when no time was set)
+const fmtFollowUp = (v) => {
+  const p = parseFollowUp(v);
+  if (!p) return '';
+  const [y, mo, d] = p.dPart.split('-');
+  const dateStr = `${d}-${mo}-${y}`;
+  if (!p.tPart) return dateStr;
+  let h = parseInt(p.tPart.slice(0, 2), 10);
+  const mm = p.tPart.slice(3, 5);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return `${dateStr}, ${String(h).padStart(2, '0')}:${mm} ${ap}`;
+};
+
 // Map the wizard's status option onto the exact table-status value stored on a lead
 const WIZARD_STATUS_TO_TABLE = {
   'New': 'New Lead', 'Hot': 'Hot Leads', 'Warm': 'Warm Leads', 'Cold': 'Cold Leads',
@@ -811,10 +848,10 @@ export default function Leads() {
                 <td>
                   <div className="table-date-wrapper">
                     <input
-                      type="date"
+                      type="datetime-local"
                       className="table-date-input"
-                      defaultValue={lead.followUp}
-                      placeholder="dd/mm/yyyy"
+                      title={fmtFollowUp(lead.followUp)}
+                      defaultValue={toFollowUpInput(lead.followUp)}
                       onClick={(e) => e.stopPropagation()}
                     />
                   </div>
