@@ -68,6 +68,17 @@ export default function Quotations() {
     setQuotations(Array.isArray(qs) ? [...qs].sort((a, b) => (new Date(b.createdAt || 0) - new Date(a.createdAt || 0)) || String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true })) : []);
   };
 
+  // The list omits the heavy base64 fileData now (it made the response huge and slow).
+  // Fetch it for one quotation on demand from GET /quotations/:id.
+  const getFileData = async (quote) => {
+    if (quote.fileData) return quote.fileData;
+    if (!quote.id) return null;
+    try { const full = await api(`/quotations/${quote.id}`); return full && full.fileData ? full.fileData : null; }
+    catch { return null; }
+  };
+  const previewQuote = async (quote) => { const d = await getFileData(quote); if (d) openDataUri(d, quote.fileName); };
+  const downloadQuote = async (quote) => { const d = await getFileData(quote); if (d) downloadDataUri(d, quote.fileName); };
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -261,10 +272,10 @@ export default function Quotations() {
                     <td>
                       {(quote.fileName || quote.fileData) ? (
                         <a
-                          href={quote.fileData || undefined}
-                          download={quote.fileData ? (quote.fileName || 'quotation.pdf') : undefined}
+                          onClick={() => downloadQuote(quote)}
+                          download={quote.fileName ? (quote.fileName || 'quotation.pdf') : undefined}
                           title={quote.fileName || 'Quotation'}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', maxWidth: '220px', padding: '0.35rem 0.6rem', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', textDecoration: 'none', color: '#334155', fontSize: '0.8rem', fontWeight: 500, cursor: quote.fileData ? 'pointer' : 'default' }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', maxWidth: '220px', padding: '0.35rem 0.6rem', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', textDecoration: 'none', color: '#334155', fontSize: '0.8rem', fontWeight: 500, cursor: quote.fileName ? 'pointer' : 'default' }}
                         >
                           <Download size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
                           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{quote.fileName || 'Quotation.pdf'}</span>
@@ -281,10 +292,10 @@ export default function Quotations() {
 
                         <button
                           className="action-btn"
-                          title={quote.fileData ? 'Download quotation' : 'No file uploaded'}
-                          onClick={() => downloadDataUri(quote.fileData, quote.fileName)}
-                          disabled={!quote.fileData}
-                          style={{border: '1px solid #e2e8f0', marginLeft: '0.5rem', opacity: quote.fileData ? '1' : '0.5', cursor: quote.fileData ? 'pointer' : 'not-allowed'}}
+                          title={quote.fileName ? 'Download quotation' : 'No file uploaded'}
+                          onClick={() => downloadQuote(quote)}
+                          disabled={!quote.fileName}
+                          style={{border: '1px solid #e2e8f0', marginLeft: '0.5rem', opacity: quote.fileName ? '1' : '0.5', cursor: quote.fileName ? 'pointer' : 'not-allowed'}}
                         >
                           <Download size={14} />
                         </button>
@@ -344,12 +355,12 @@ export default function Quotations() {
                     </div>
                   </td>
                   <td>
-                    {quote.fileData ? (
+                    {quote.fileName ? (
                       <a
-                        href={quote.fileData || undefined}
-                        download={quote.fileData ? (quote.fileName || 'quotation.pdf') : undefined}
+                        onClick={() => downloadQuote(quote)}
+                        download={quote.fileName ? (quote.fileName || 'quotation.pdf') : undefined}
                         title={quote.fileName || 'Quotation'}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', maxWidth: '220px', padding: '0.35rem 0.6rem', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', textDecoration: 'none', color: '#334155', fontSize: '0.8rem', fontWeight: 500, cursor: quote.fileData ? 'pointer' : 'default' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', maxWidth: '220px', padding: '0.35rem 0.6rem', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#F8FAFC', textDecoration: 'none', color: '#334155', fontSize: '0.8rem', fontWeight: 500, cursor: quote.fileName ? 'pointer' : 'default' }}
                       >
                         <Download size={16} style={{ flexShrink: 0, color: '#6366F1' }} />
                         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{quote.fileName || 'Quotation.pdf'}</span>
@@ -362,19 +373,19 @@ export default function Quotations() {
                     <div className="action-buttons">
                       <button
                         className="action-btn"
-                        title={quote.fileData ? 'View quotation' : 'No file uploaded'}
-                        onClick={() => openDataUri(quote.fileData, quote.fileName)}
-                        disabled={!quote.fileData}
-                        style={{ opacity: quote.fileData ? 1 : 0.5, cursor: quote.fileData ? 'pointer' : 'not-allowed' }}
+                        title={quote.fileName ? 'View quotation' : 'No file uploaded'}
+                        onClick={() => previewQuote(quote)}
+                        disabled={!quote.fileName}
+                        style={{ opacity: quote.fileName ? 1 : 0.5, cursor: quote.fileName ? 'pointer' : 'not-allowed' }}
                       >
                         <Eye size={16} />
                       </button>
                       <button
                         className="action-btn"
-                        title={quote.fileData ? 'Download quotation' : 'No file uploaded'}
-                        onClick={() => downloadDataUri(quote.fileData, quote.fileName)}
-                        disabled={!quote.fileData}
-                        style={{ opacity: quote.fileData ? 1 : 0.5, cursor: quote.fileData ? 'pointer' : 'not-allowed' }}
+                        title={quote.fileName ? 'Download quotation' : 'No file uploaded'}
+                        onClick={() => downloadQuote(quote)}
+                        disabled={!quote.fileName}
+                        style={{ opacity: quote.fileName ? 1 : 0.5, cursor: quote.fileName ? 'pointer' : 'not-allowed' }}
                       >
                         <Download size={16} />
                       </button>

@@ -4,8 +4,19 @@ const Quotation = require('../models/Quotation');
 // GET /api/quotations — all
 router.get('/', async (req, res) => {
   try {
-    const quotes = await Quotation.find().sort({ createdAt: 1 });
+    const quotes = await Quotation.find().select('-fileData').sort({ createdAt: 1 });
     res.json(quotes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/quotations/:id — a single quotation WITH its file data (for preview/download)
+router.get('/:id', async (req, res) => {
+  try {
+    const quote = await Quotation.findOne({ id: req.params.id });
+    if (!quote) return res.status(404).json({ message: 'Quotation not found' });
+    res.json(quote);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

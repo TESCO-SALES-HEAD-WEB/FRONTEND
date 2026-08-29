@@ -109,6 +109,30 @@ export default function Approvals() {
     return () => { cancelled = true; };
   }, []);
 
+  // The list omits the heavy base64 fileData now — fetch the PDF for one quotation on demand.
+  const getReqFileData = async (req) => {
+    if (req.fileData) return req.fileData;
+    if (!req.id) return null;
+    try { const full = await api(`/quotations/${req.id}`); return full && full.fileData ? full.fileData : null; }
+    catch { return null; }
+  };
+  const openApprovalFile = async (req) => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write('<title>Loading…</title><p style="font-family:sans-serif;padding:24px;color:#475569">Loading document…</p>');
+    const data = await getReqFileData(req);
+    w.document.open();
+    if (data) w.document.write(`<title>${req.fileName || 'Quotation'}</title><iframe src="${data}" style="border:0;width:100vw;height:100vh"></iframe>`);
+    else w.document.write('<p style="font-family:sans-serif;padding:24px;color:#475569">This file isn\'t available — please ask for a re-upload.</p>');
+    w.document.close();
+  };
+  const downloadApprovalFile = async (req) => {
+    const data = await getReqFileData(req);
+    if (!data) return;
+    const a = document.createElement('a'); a.href = data; a.download = req.fileName || 'quotation.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+
   const matchesManager = (req) => manager === 'all' || leadManagerById[req.leadId] === manager;
 
   const managerApprovals = approvalsData.filter(matchesManager);
@@ -371,33 +395,26 @@ export default function Approvals() {
                     <div className="attachment-chip">
                       <Paperclip size={14} />
                       <span>{selectedRequest.fileName}</span>
-                      {selectedRequest.fileData ? (
-                        <>
-                          <button
-                            type="button"
-                            className="btn--icon"
-                            title="Open"
-                            style={{ marginLeft: 'auto' }}
-                            onClick={() => {
-                              const w = window.open('', '_blank');
-                              if (w) { w.document.write(`<title>${selectedRequest.fileName}</title><iframe src="${selectedRequest.fileData}" style="border:0;width:100vw;height:100vh"></iframe>`); w.document.close(); }
-                            }}
-                          >
-                            <Search size={14} />
-                          </button>
-                          <a
-                            className="btn--icon"
-                            title="Download"
-                            href={selectedRequest.fileData}
-                            download={selectedRequest.fileName}
-                            style={{ display: 'inline-flex', alignItems: 'center' }}
-                          >
-                            <Download size={14} />
-                          </a>
-                        </>
-                      ) : (
-                        <span className="text-muted text-xs" style={{ marginLeft: 'auto' }}>preview unavailable</span>
-                      )}
+                      <>
+                        <button
+                          type="button"
+                          className="btn--icon"
+                          title="Open"
+                          style={{ marginLeft: 'auto' }}
+                          onClick={() => openApprovalFile(selectedRequest)}
+                        >
+                          <Search size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn--icon"
+                          title="Download"
+                          onClick={() => downloadApprovalFile(selectedRequest)}
+                          style={{ display: 'inline-flex', alignItems: 'center' }}
+                        >
+                          <Download size={14} />
+                        </button>
+                      </>
                     </div>
                   ) : (
                     <div className="text-muted text-xs">No file was attached to this quotation.</div>
