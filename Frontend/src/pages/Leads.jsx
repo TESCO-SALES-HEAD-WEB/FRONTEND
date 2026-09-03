@@ -688,7 +688,6 @@ export default function Leads() {
               <th>Project Value</th>
               <th>Phone Number</th>
               <th>Email</th>
-              <th>Campaign</th>
               <th>City</th>
               <th>Expected Start</th>
               <th>Area (sq ft)</th>
@@ -765,7 +764,6 @@ export default function Leads() {
                 <td className="font-medium">{lead.value ?? lead.projectValue ?? '-'}</td>
                 <td className="text-muted">{lead.phone}</td>
                 <td className="text-muted">{lead.email || '-'}</td>
-                <td className="text-muted" style={{ whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: '240px' }}>{lead.campaign || '-'}</td>
                 <td className="text-muted">{lead.city || '-'}</td>
                 <td className="text-muted">{lead.timeline ? String(lead.timeline).replace(/_/g, ' ') : '-'}</td>
                 <td className="text-muted">{lead.area ? String(lead.area).replace(/_/g, ' ') : '-'}</td>
