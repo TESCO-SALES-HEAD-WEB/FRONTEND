@@ -687,6 +687,11 @@ export default function Leads() {
               </th>
               <th>Project Value</th>
               <th>Phone Number</th>
+              <th>Email</th>
+              <th>Campaign</th>
+              <th>City</th>
+              <th>Expected Start</th>
+              <th>Area (sq ft)</th>
               <th className="th-interactive" onClick={() => setLeadSourceDropdownOpen(!leadSourceDropdownOpen)}>
                 {selectedLeadSource === 'All' ? 'LEAD SOURCE (ALL)' : selectedLeadSource.toUpperCase()} <ChevronDown size={14} style={{display:'inline', verticalAlign:'middle'}}/>
 
@@ -759,6 +764,11 @@ export default function Leads() {
                 <td>{lead.service || '-'}</td>
                 <td className="font-medium">{lead.value ?? lead.projectValue ?? '-'}</td>
                 <td className="text-muted">{lead.phone}</td>
+                <td className="text-muted">{lead.email || '-'}</td>
+                <td className="text-muted">{lead.campaign || '-'}</td>
+                <td className="text-muted">{lead.city || '-'}</td>
+                <td className="text-muted">{lead.timeline ? String(lead.timeline).replace(/_/g, ' ') : '-'}</td>
+                <td className="text-muted">{lead.area ? String(lead.area).replace(/_/g, ' ') : '-'}</td>
                 <td>
                   <div className={`status-select-wrapper badge-${getSourceColor(lead.source)}`} style={{ backgroundColor: sourceColor(lead.source).bg, color: sourceColor(lead.source).color, borderColor: sourceColor(lead.source).border }}>
                     <span className="source-dot" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', background: sourceColor(lead.source).dot, width: '8px', height: '8px', borderRadius: '50%' }}></span>
@@ -883,13 +893,6 @@ export default function Leads() {
                     >
                       <Download size={14} />
                     </button>
-                    <button
-                      className="action-btn btn-delete"
-                      title="Move lead to Junk"
-                      onClick={(e) => { e.stopPropagation(); setJunkReason(''); setJunkTarget(lead); }}
-                    >
-                      <Trash size={14} />
-                    </button>
                   </div>
                 </td>
 
@@ -923,61 +926,6 @@ export default function Leads() {
         editLead={wizardLead}
         managers={managers}
       />
-
-      {/* Junk confirmation modal (replaces the native confirm dialog) */}
-      {junkTarget && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, backgroundColor: 'rgba(15,23,42,0.55)',
-            zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem'
-          }}
-          onClick={() => { if (!junkSaving) { setJunkTarget(null); setJunkReason(''); } }}
-        >
-          <div
-            className="card"
-            onClick={(e) => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: '440px', padding: '1.75rem', textAlign: 'center', background: '#fff', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}
-          >
-            <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-              <Trash2 size={24} color="#DC2626" />
-            </div>
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', fontWeight: 700 }}>Move this lead to Junk?</h3>
-            <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              <strong>{junkTarget.name || junkTarget.id}</strong> will be moved to Junk and counted under Junk leads.
-            </p>
-            <div style={{ textAlign: 'left', marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-muted)' }}>
-                Junk Reason (optional)
-              </label>
-              <textarea
-                value={junkReason}
-                onChange={(e) => setJunkReason(e.target.value)}
-                rows={3}
-                placeholder="Why is this lead being junked?"
-                disabled={junkSaving}
-                style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color, #e2e8f0)', fontSize: '0.875rem', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-              <button
-                className="btn btn--secondary"
-                onClick={() => { setJunkTarget(null); setJunkReason(''); }}
-                disabled={junkSaving}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn"
-                onClick={confirmJunk}
-                disabled={junkSaving}
-                style={{ background: '#DC2626', color: '#fff', border: 'none', opacity: junkSaving ? 0.7 : 1 }}
-              >
-                {junkSaving ? 'Moving…' : 'Move to Junk'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <LeadDetailsDrawer
         isOpen={!!selectedLead}
