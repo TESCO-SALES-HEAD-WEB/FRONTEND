@@ -63,7 +63,8 @@ const fmtExpected = (d) => {
 const toDateInput = (d) => {
   if (!d || d === 'Pending' || d === 'No Date') return '';
   const dt = new Date(d);
-  return isNaN(dt.getTime()) ? '' : dt.toISOString().split('T')[0];
+  if (isNaN(dt.getTime())) return '';
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 };
 
 // Build a stable opportunity id from a lead/pipeline id.
