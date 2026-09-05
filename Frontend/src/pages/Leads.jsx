@@ -544,6 +544,8 @@ export default function Leads() {
     if (selectedService !== 'All' && String(lead.service || '').toUpperCase() !== selectedService.toUpperCase()) return false;
     if (selectedLeadSource !== 'All' && String(lead.source || '').toUpperCase() !== selectedLeadSource.toUpperCase()) return false;
     if (selectedStatus !== 'All' && String(lead.status || '').toUpperCase() !== selectedStatus.toUpperCase()) return false;
+    // Hide Junk leads from the default (All) view; they remain viewable via the Status filter (Junk).
+    if (selectedStatus === 'All' && String(lead.status || '').toLowerCase().includes('junk')) return false;
     if (!inSelectedRange(lead.date || lead.createdAt)) return false;
     return true;
   }).sort((a, b) => {
@@ -890,6 +892,13 @@ export default function Leads() {
                       }}
                     >
                       <Download size={14} />
+                    </button>
+                    <button
+                      className="action-btn btn-delete"
+                      title="Delete lead"
+                      onClick={(e) => { e.stopPropagation(); setJunkTarget(lead); }}
+                    >
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </td>
