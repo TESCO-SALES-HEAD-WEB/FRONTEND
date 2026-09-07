@@ -157,12 +157,13 @@ export default function Pipeline() {
       const val = parseVal(l.budget != null ? l.budget : l.value);
       if (val <= 0 || String(l.status || '').toLowerCase() === 'junk') return;
       map.set(l.id, deriveRow(l, val));
-      leadByOpId.set(digitsId(l.id), l.id);
+      leadByOpId.set(digitsId(l.id), l.id); leadByOpId.set('L' + parseInt(String(l.id || '').replace(/\D/g, ''), 10), l.id);
       if (l.name) leadByName.set(String(l.name).trim().toLowerCase(), l.id);
     });
     const resolveLead = (e) => {
       if (e.leadId && map.has(e.leadId)) return e.leadId;
       if (leadByOpId.has(e.id)) return leadByOpId.get(e.id);
+      const _nk = 'L' + parseInt(String(e.leadId || e.id).replace(/\D/g, ''), 10); if (leadByOpId.has(_nk)) return leadByOpId.get(_nk);
       const n = String(e.customer || '').trim().toLowerCase();
       if (n && leadByName.has(n)) return leadByName.get(n);
       return null;
@@ -195,10 +196,11 @@ export default function Pipeline() {
     const leadIds = new Set(leads.map((l) => l.id));
     const leadByOpId = new Map();
     const leadByName = new Map();
-    leads.forEach((l) => { leadByOpId.set(digitsId(l.id), l.id); if (l.name) leadByName.set(String(l.name).trim().toLowerCase(), l.id); });
+    leads.forEach((l) => { leadByOpId.set(digitsId(l.id), l.id); leadByOpId.set('L' + parseInt(String(l.id || '').replace(/\D/g, ''), 10), l.id); if (l.name) leadByName.set(String(l.name).trim().toLowerCase(), l.id); });
     const resolveLead = (e) => {
       if (e.leadId && leadIds.has(e.leadId)) return e.leadId;
       if (leadByOpId.has(e.id)) return leadByOpId.get(e.id);
+      const _nk = 'L' + parseInt(String(e.leadId || e.id).replace(/\D/g, ''), 10); if (leadByOpId.has(_nk)) return leadByOpId.get(_nk);
       const n = String(e.customer || '').trim().toLowerCase();
       if (n && leadByName.has(n)) return leadByName.get(n);
       return null;
