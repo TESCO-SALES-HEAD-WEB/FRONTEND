@@ -18,6 +18,7 @@ import ScopeFilter from '../components/ScopeFilter';
 import RecordPaymentModal from '../components/RecordPaymentModal';
 import PaymentDrawer, { deriveStatus, parseAmount } from '../components/PaymentDrawer';
 import { api } from '../api/client';
+import useAutoRefresh from '../hooks/useAutoRefresh';
 import { useViewMode } from '../context/ViewModeContext';
 import { showToast } from '../utils/toast';
 import './Payments.css';
@@ -92,6 +93,10 @@ export default function Payments() {
     const data = await api('/payments');
     setPaymentsData(Array.isArray(data) ? [...data].sort((a, b) => new Date(b.createdAt || b.paymentDate || b.dueDate || 0) - new Date(a.createdAt || a.paymentDate || a.dueDate || 0)) : []);
   };
+  useAutoRefresh(() => {
+    refreshPayments();
+    api('/leads').then((d) => setLeads(Array.isArray(d) ? d : [])).catch(() => {});
+  });
 
   // ── Manager options for the drawer (roster + managers seen on the leads) ──
   const managerOptions = React.useMemo(() => {

@@ -9,6 +9,7 @@ import {
 import DateRangePicker from '../components/DateRangePicker';
 import ScopeFilter from '../components/ScopeFilter';
 import { api } from '../api/client';
+import useAutoRefresh from '../hooks/useAutoRefresh';
 import { useViewMode } from '../context/ViewModeContext';
 import './Dashboard.css';
 
@@ -63,17 +64,14 @@ export default function Dashboard() {
   const [range, setRange] = useState({ start: null, end: null });
 
   // Pull all live data from the shared CRM database
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      setLoading(true);
+  const load = async (showSpinner = true) => {
+      if (showSpinner) setLoading(true);
       setLoadError('');
       const safe = (p) => p.then((d) => (Array.isArray(d) ? d : [])).catch(() => null);
       const [ld, ap, qt, pr, pm, mg, co] = await Promise.all([
         safe(api('/leads')), safe(api('/appointments')), safe(api('/quotations')), safe(api('/projects')), safe(api('/payments')),
         safe(api('/auth/managers')), safe(api(`/users?role=${encodeURIComponent('Sales Coordinator')}`)),
       ]);
-      if (!active) return;
       if (ld === null && ap === null && qt === null && pm === null) {
         setLoadError('Could not reach the server. Start the Sales Head backend to see live data.');
       }
@@ -85,10 +83,9 @@ export default function Dashboard() {
       setLoginManagers((mg || []).map((u) => u.name).filter(Boolean));
       setLoginCoordinators((co || []).map((u) => u.name).filter(Boolean));
       setLoading(false);
-    };
-    load();
-    return () => { active = false; };
-  }, []);
+  };
+  useEffect(() => { load(true); }, []);
+  useAutoRefresh(() => load(false));
 
   // Only managers who actually have a login account appear in the filter.
   // (Falls back to managers seen in the data if the accounts endpoint is unavailable.)

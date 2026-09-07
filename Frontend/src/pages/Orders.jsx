@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import DateRangePicker from '../components/DateRangePicker';
 import ScopeFilter from '../components/ScopeFilter';
 import { api } from '../api/client';
+import useAutoRefresh from '../hooks/useAutoRefresh';
 import { useViewMode } from '../context/ViewModeContext';
 import './Orders.css';
 
@@ -42,9 +43,7 @@ export default function Orders() {
   // and Manager apps read, so the Head's Orders list shows the exact same records —
   // each with its File ID (PF-xxxx) and its originating Lead ID — instead of being
   // re-derived from leads. Keeps the two views identical to their respective apps.
-  useEffect(() => {
-    let active = true;
-    (async () => {
+  const loadOrders = async () => {
       try {
         const projects = await api('/projects');
         const mapped = (Array.isArray(projects) ? [...projects].sort((a, b) => new Date(b.createdAt || b.updatedAt || b.date || 0) - new Date(a.createdAt || a.updatedAt || a.date || 0)) : [])
@@ -58,13 +57,16 @@ export default function Orders() {
             manager: p.manager || p.salesperson || '',
             value: fmtMoney(parseMoney(p.value != null ? p.value : (p.quote || p.orderValue || 0)))
           }));
-        if (active) setOrders(mapped);
+        setOrders(mapped);
       } catch {
-        if (active) setOrders([]);
+        setOrders([]);
       }
-    })();
-    return () => { active = false; };
-  }, []);
+  };
+  useEffect(() => { loadOrders(); }, []);
+  useAutoRefresh(() => {
+    loadOrders();
+    api('/leads').then((d) => setLeads(Array.isArray(d) ? d : [])).catch(() => {});
+  });
 
   useEffect(() => {
     let active = true;

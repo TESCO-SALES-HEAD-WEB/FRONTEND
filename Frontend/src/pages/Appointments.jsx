@@ -20,6 +20,7 @@ import ScheduleVisitModal from '../components/ScheduleVisitModal';
 import StartAppointmentModal from '../components/StartAppointmentModal';
 import RescheduleAppointmentModal from '../components/RescheduleAppointmentModal';
 import { api } from '../api/client';
+import useAutoRefresh from '../hooks/useAutoRefresh';
 import { useViewMode } from '../context/ViewModeContext';
 import './Appointments.css';
 
@@ -93,6 +94,7 @@ export default function Appointments() {
       setAppointments([]);
     }
   };
+  useAutoRefresh(loadAppointments);
 
   useEffect(() => {
     let active = true;

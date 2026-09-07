@@ -13,6 +13,7 @@ import StatusUpdateModal from '../components/StatusUpdateModal';
 import GenerateQuotationModal from '../components/GenerateQuotationModal';
 import DesignRequirementModal from '../components/DesignRequirementModal';
 import { api } from '../api/client';
+import useAutoRefresh from '../hooks/useAutoRefresh';
 import { showToast } from '../utils/toast';
 import { useViewMode } from '../context/ViewModeContext';
 import { statusColor, sourceColor } from '../utils/statusColors';
@@ -178,24 +179,24 @@ export default function Leads() {
   };
 
   // Fetch real data from the shared CRM backend on mount
-  useEffect(() => {
-    let active = true;
+  const loadLeadsAll = () => {
     api('/leads')
-      .then((d) => { if (active) setLeadsData(Array.isArray(d) ? d : []); })
-      .catch(() => { if (active) setLeadsData([]); });
+      .then((d) => setLeadsData(Array.isArray(d) ? d : []))
+      .catch(() => setLeadsData([]));
     api('/auth/managers')
-      .then((d) => { if (active) setManagers(Array.isArray(d) ? d : []); })
-      .catch(() => { if (active) setManagers([]); });
+      .then((d) => setManagers(Array.isArray(d) ? d : []))
+      .catch(() => setManagers([]));
     // Appointments & quotations power the record-based Appt Fixed / Quotation Sent counts,
     // so the overview matches the Manager app (which counts records, not lead status).
     api('/appointments')
-      .then((d) => { if (active) setApptRecords(Array.isArray(d) ? d : []); })
-      .catch(() => { if (active) setApptRecords([]); });
+      .then((d) => setApptRecords(Array.isArray(d) ? d : []))
+      .catch(() => setApptRecords([]));
     api('/quotations')
-      .then((d) => { if (active) setQuoteRecords(Array.isArray(d) ? d : []); })
-      .catch(() => { if (active) setQuoteRecords([]); });
-    return () => { active = false; };
-  }, []);
+      .then((d) => setQuoteRecords(Array.isArray(d) ? d : []))
+      .catch(() => setQuoteRecords([]));
+  };
+  useEffect(() => { loadLeadsAll(); }, []);
+  useAutoRefresh(loadLeadsAll);
 
   const getStatusColor = (status) => {
     switch (String(status || '').toUpperCase()) {

@@ -15,6 +15,7 @@ import DateRangePicker from '../components/DateRangePicker';
 import ScopeFilter from '../components/ScopeFilter';
 import UploadQuotationModal from '../components/UploadQuotationModal';
 import { api } from '../api/client';
+import useAutoRefresh from '../hooks/useAutoRefresh';
 import { useViewMode } from '../context/ViewModeContext';
 import './Quotations.css';
 
@@ -67,6 +68,10 @@ export default function Quotations() {
     const qs = await api('/quotations').catch(() => []);
     setQuotations(Array.isArray(qs) ? [...qs].sort((a, b) => (new Date(b.createdAt || 0) - new Date(a.createdAt || 0)) || String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true })) : []);
   };
+  useAutoRefresh(() => {
+    reloadQuotations();
+    api('/leads').then((d) => setLeads(Array.isArray(d) ? d : [])).catch(() => {});
+  });
 
   // The list omits the heavy base64 fileData now (it made the response huge and slow).
   // Fetch it for one quotation on demand from GET /quotations/:id.
