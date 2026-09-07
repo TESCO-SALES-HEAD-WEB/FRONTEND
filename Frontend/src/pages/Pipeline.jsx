@@ -74,6 +74,7 @@ export default function Pipeline() {
     const { view: viewMode, setView: setViewMode, manager, setManager } = useViewMode();
   const [leads, setLeads] = useState([]);   // live leads from the backend
   const [extras, setExtras] = useState([]); // persisted stage/follow-up edits (/pipeline)
+  const [leadsLoaded, setLeadsLoaded] = useState(false);
   const [managers, setManagers] = useState([]);
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
@@ -85,7 +86,7 @@ export default function Pipeline() {
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      api('/leads').then(d => { if (!cancelled && Array.isArray(d)) setLeads([...d].sort((a, b) => new Date(b.createdAt || b.updatedAt || b.date || 0) - new Date(a.createdAt || a.updatedAt || a.date || 0))); }).catch(() => {});
+      api('/leads').then(d => { if (!cancelled && Array.isArray(d)) setLeads([...d].sort((a, b) => new Date(b.createdAt || b.updatedAt || b.date || 0) - new Date(a.createdAt || a.updatedAt || a.date || 0))); }).catch(() => {}).finally(() => { if (!cancelled) setLeadsLoaded(true); });
       api('/pipeline').then(d => { if (!cancelled && Array.isArray(d)) setExtras(d); }).catch(() => {});
     };
     load();
@@ -142,30 +143,75 @@ export default function Pipeline() {
     };
   };
 
-  // Merge live leads with persisted edits — EXACTLY as the Coordinator does.
+  const scoreDoc = (e) => (e && e.stage && e.stage !== 'New' ? 2 : 0) + (e && e.followUp ? 1 : 0);
+
+  // ONE ROW PER LEAD. Resolve every stored doc back to its lead (by leadId, canonical OP-id,
+  // or customer name), keep only the best override per lead, and never render a stored doc as
+  // its own row unless it truly matches no lead.
   const pipelineData = React.useMemo(() => {
+    if (!leadsLoaded) return []; // wait for leads before matching docs (prevents duplicate flash)
     const map = new Map();
+    const leadByOpId = new Map();
+    const leadByName = new Map();
     leads.forEach((l) => {
       const val = parseVal(l.budget != null ? l.budget : l.value);
-      if (val <= 0) return;
-      if (String(l.status || '').toLowerCase() === 'junk') return;
+      if (val <= 0 || String(l.status || '').toLowerCase() === 'junk') return;
       map.set(l.id, deriveRow(l, val));
+      leadByOpId.set(digitsId(l.id), l.id);
+      if (l.name) leadByName.set(String(l.name).trim().toLowerCase(), l.id);
     });
+    const resolveLead = (e) => {
+      if (e.leadId && map.has(e.leadId)) return e.leadId;
+      if (leadByOpId.has(e.id)) return leadByOpId.get(e.id);
+      const n = String(e.customer || '').trim().toLowerCase();
+      if (n && leadByName.has(n)) return leadByName.get(n);
+      return null;
+    };
+    const bestByLead = new Map();
+    const orphans = new Map();
     extras.forEach((e) => {
-      const key = e.leadId || e.id;
-      const base = map.get(key);
-      if (base) {
-        map.set(key, {
-          ...base,
-          stage: e.stage || base.stage,
-          followUp: (e.followUp !== undefined && e.followUp !== '') ? e.followUp : base.followUp,
-          expectedClose: (e.expectedClose && e.expectedClose !== '-') ? e.expectedClose : base.expectedClose,
-        });
-      } else {
-        map.set(key, extraRow(e));
-      }
+      const lid = resolveLead(e);
+      if (lid) { const cur = bestByLead.get(lid); if (!cur || scoreDoc(e) > scoreDoc(cur)) bestByLead.set(lid, e); }
+      else if (!orphans.has(e.id)) orphans.set(e.id, e);
     });
-    return Array.from(map.values());
+    bestByLead.forEach((e, lid) => {
+      const base = map.get(lid);
+      if (!base) return;
+      map.set(lid, {
+        ...base,
+        stage: e.stage || base.stage,
+        followUp: (e.followUp !== undefined && e.followUp !== '') ? e.followUp : base.followUp,
+        expectedClose: (e.expectedClose && e.expectedClose !== '-') ? e.expectedClose : base.expectedClose,
+      });
+    });
+    return [...Array.from(map.values()), ...Array.from(orphans.values()).map(extraRow)];
+  }, [leads, extras, leadsLoaded]);
+
+  // One-time self-heal: delete duplicate pipeline docs for the same lead from the shared
+  // collection (older OP-id schemes / lost leadId), keeping the most-edited one.
+  const healedRef = React.useRef(false);
+  useEffect(() => {
+    if (healedRef.current || leads.length === 0 || extras.length === 0) return;
+    const leadIds = new Set(leads.map((l) => l.id));
+    const leadByOpId = new Map();
+    const leadByName = new Map();
+    leads.forEach((l) => { leadByOpId.set(digitsId(l.id), l.id); if (l.name) leadByName.set(String(l.name).trim().toLowerCase(), l.id); });
+    const resolveLead = (e) => {
+      if (e.leadId && leadIds.has(e.leadId)) return e.leadId;
+      if (leadByOpId.has(e.id)) return leadByOpId.get(e.id);
+      const n = String(e.customer || '').trim().toLowerCase();
+      if (n && leadByName.has(n)) return leadByName.get(n);
+      return null;
+    };
+    const groups = new Map();
+    extras.forEach((e) => { const lid = resolveLead(e); if (lid) { const a = groups.get(lid) || []; a.push(e); groups.set(lid, a); } });
+    const removeIds = [];
+    groups.forEach((docs) => { if (docs.length < 2) return; [...docs].sort((a, b) => scoreDoc(b) - scoreDoc(a)).slice(1).forEach((d) => { if (d.id) removeIds.push(d.id); }); });
+    if (removeIds.length === 0) { healedRef.current = true; return; }
+    healedRef.current = true;
+    Promise.all(removeIds.map((id) => api(`/pipeline/${id}`, { method: 'DELETE' }).catch(() => {})))
+      .then(() => api('/pipeline').then((d) => { if (Array.isArray(d)) setExtras(d); }).catch(() => {}))
+      .catch(() => {});
   }, [leads, extras]);
 
   // Persist a stage / follow-up edit to the shared /pipeline collection.
